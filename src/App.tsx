@@ -1,0 +1,22 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/home.tsx";
+import Login from "./pages/login.tsx"
+import Navbar from "./components/Navbar";
+import Register from "./pages/register.tsx";
+import Araclar from "./pages/araclar.tsx"
+const App: React.FC = () => {
+    return (
+        <Router>
+            <Navbar />
+            <Routes>
+                <Route path="/" element={<Home/>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/araclar" element={<Araclar/>} />
+            </Routes>
+        </Router>
+    );
+};
+
+export default App;
