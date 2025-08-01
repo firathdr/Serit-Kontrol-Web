@@ -1,129 +1,188 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 const Navbar: React.FC = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [username, setUsername] = useState<string | null>(null);
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-    const isAuthenticated = !!token;
+    const location = useLocation();
 
-    // Kullanıcının rolünü kontrol et
-    let role: string | null = null;
-    if (token) {
-        const decoded = parseJwt(token); // Token'ı çözümle
-        if (decoded && decoded.role) {
-            role = decoded.role; // Rol bilgisine ulaş
+    const checkAuthStatus = () => {
+        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+        
+        console.log("🔍 Token kontrol ediliyor:", token ? "✅ Token var" : "❌ Token yok");
+        
+        if (token) {
+            try {
+                // JWT token'ı decode et
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const currentTime = Date.now() / 1000;
+                
+                console.log("📋 Token payload:", payload);
+                
+                // Token'ın geçerliliğini kontrol et
+                if (payload.exp && payload.exp < currentTime) {
+                    console.warn("⏰ Token süresi dolmuş");
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("access_token");
+                    setIsLoggedIn(false);
+                    setUsername(null);
+                    return;
+                }
+                
+                // Backend'den gelen username field'ını kullan
+                const user = payload.username || payload.sub || payload.name || "Kullanıcı";
+                console.log("👤 Kullanıcı adı:", user);
+                
+                setUsername(user);
+                setIsLoggedIn(true);
+            } catch (error) {
+                console.warn("❌ Geçersiz JWT token:", error);
+                console.warn("Token içeriği:", token);
+                // Token geçersizse temizle
+                localStorage.removeItem("token");
+                localStorage.removeItem("access_token");
+                setIsLoggedIn(false);
+                setUsername(null);
+            }
+        } else {
+            console.log("🚫 Token bulunamadı, giriş yapılmamış");
+            setIsLoggedIn(false);
+            setUsername(null);
         }
-    }
+    };
+
+    useEffect(() => {
+        // İlk yükleme
+        checkAuthStatus();
+        
+        // Her 1 saniyede bir kontrol et (daha sık)
+        const interval = setInterval(checkAuthStatus, 1000);
+        
+        // localStorage değişikliklerini dinle
+        const handleStorageChange = () => {
+            console.log("💾 localStorage değişti, auth durumu kontrol ediliyor");
+            checkAuthStatus();
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Custom event listener for login/logout
+        window.addEventListener('authStateChanged', () => {
+            console.log("🎯 authStateChanged event tetiklendi");
+            checkAuthStatus();
+        });
+        
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('authStateChanged', checkAuthStatus);
+        };
+    }, []); // location.pathname'i kaldırdım çünkü sürekli kontrol ediyoruz
 
     const handleLogout = () => {
+        console.log("🚪 Çıkış yapılıyor...");
         localStorage.removeItem("token");
-        navigate("/");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("username");
+        setIsLoggedIn(false);
+        setUsername(null);
+        
+        // Custom event tetikle
+        window.dispatchEvent(new Event('authStateChanged'));
+        
+        navigate("/login");
     };
 
     return (
         <nav style={styles.navbar}>
-            <h1 style={styles.logo}>
-                <Link to="/" style={styles.link}>
-                    İhlal Kontrol Sistemi
-                </Link>
-            </h1>
-            <ul style={styles.navLinks}>
-                {isAuthenticated ? (
-                    <>
-                        <li>
-                            <Link to="/books" style={styles.link}>
-                                Books
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/borrowed-books" style={styles.link}>
-                                Borrowed Books
-                            </Link>
-                        </li>
-                        {/* Eğer kullanıcı admin ise Admin tuşunu göster */}
-                        {role === "admin" && (
-                            <li>
-                                <Link to="/admin" style={styles.link}>
-                                    Admin
-                                </Link>
-                            </li>
-                        )}
+            <Link to="/" style={styles.logo}>🚗 Araç İhlal Sistemi</Link>
 
-                        <li>
-                            <button onClick={handleLogout} style={styles.logoutButton}>
-                                Logout
-                            </button>
-                        </li>
-                    </>
-                ) : (
+            <div style={styles.menu}>
+                {isLoggedIn && (
                     <>
-                        <li>
-                            <Link to="/login" style={styles.link}>
-                                Login
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/register" style={styles.link}>
-                                Register
-                            </Link>
-                        </li>
+                        <Link to="/araclar" style={styles.link}>Araçlar</Link>
+                        <Link to="/itirazlarim" style={styles.link}>İtirazlarım</Link>
+                        <span style={styles.user}>👤 {username}</span>
+                        <button onClick={handleLogout} style={styles.button}>Çıkış Yap</button>
                     </>
                 )}
-            </ul>
+
+                {!isLoggedIn && (
+                    <>
+                        <Link to="/login" style={styles.link}>Giriş Yap</Link>
+                        <Link to="/register" style={styles.link}>Kayıt Ol</Link>
+                    </>
+                )}
+            </div>
+            
+            {/* Debug bilgisi - sadece geliştirme ortamında göster */}
+            {import.meta.env.DEV && (
+                <div style={{position: 'absolute', top: '5px', right: '5px', fontSize: '10px', color: '#95a5a6'}}>
+                    🔐 {isLoggedIn ? 'Giriş yapıldı' : 'Giriş yapılmadı'} | 👤 {username || 'Yok'}
+                </div>
+            )}
         </nav>
     );
 };
 
-const parseJwt = (token: string) => {
-    try {
-        const base64Url = token.split(".")[1]; // Token'ın payload kısmını al
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/"); // Base64 formatını düzelt
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split("")
-                .map((c) => {
-                    return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-                })
-                .join("")
-        );
-        return JSON.parse(jsonPayload); // JSON olarak çöz
-    } catch (e) {
-        console.error("Invalid JWT token", e);
-        return null;
-    }
-};
+export default Navbar;
 
+// Basit stiller
 const styles = {
     navbar: {
+        backgroundColor: "#2c3e50",
+        color: "white",
+        padding: "15px 20px",
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "space-between" as const,
         alignItems: "center",
-        padding: "10px 20px",
-        backgroundColor: "#007bff",
-        color: "#fff",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        position: "sticky" as const,
+        top: 0,
+        zIndex: 1000,
     },
     logo: {
-        margin: 0,
+        fontSize: "20px",
+        textDecoration: "none",
+        color: "white",
+        fontWeight: "bold" as const,
+        transition: "color 0.3s ease",
     },
-    navLinks: {
+    menu: {
         display: "flex",
-        listStyleType: "none",
-        margin: 0,
-        padding: 0,
+        gap: "20px",
+        alignItems: "center",
     },
     link: {
-        margin: "0 10px",
         textDecoration: "none",
-        color: "#fff",
+        color: "#ecf0f1",
+        fontSize: "16px",
+        fontWeight: "500" as const,
+        transition: "color 0.3s ease",
+        padding: "8px 12px",
+        borderRadius: "4px",
+        ":hover": {
+            color: "#3498db",
+        }
     },
-    logoutButton: {
-        marginLeft: "10px",
-        backgroundColor: "red",
+    user: {
+        color: "#bdc3c7",
+        fontSize: "14px",
+        fontWeight: "500" as const,
+    },
+    button: {
+        backgroundColor: "#e74c3c",
         color: "white",
         border: "none",
-        padding: "5px 10px",
+        padding: "8px 16px",
         cursor: "pointer",
-    },
+        borderRadius: "4px",
+        fontSize: "14px",
+        fontWeight: "500" as const,
+        transition: "background-color 0.3s ease",
+        ":hover": {
+            backgroundColor: "#c0392b",
+        }
+    }
 };
-
-export default Navbar;

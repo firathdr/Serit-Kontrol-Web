@@ -3,66 +3,66 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Register: React.FC = () => {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [isim, setIsim] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const handleRegister = async () => {
         try {
-            const response = await axios.post("http://localhost:5000/api/users/register", {
-                name,
-                email,
+            const response = await axios.post("http://localhost:5000/api/registr", {
+                isim,
+                username,
                 password,
             });
-            alert(response.data.message); // Başarı mesajını göster
+            alert("Üye işlemi Başarılı"); // Başarı mesajını göster
             navigate("/login"); // Başarıyla kayıt olunca login sayfasına yönlendir
         } catch (err: any) {
-            setError("Failed to register. Please try again.");
+            setError("Kayıt işlemi başarısız. Lütfen tekrar deneyin.");
         }
     };
 
     return (
         <div className="container d-flex align-items-center justify-content-center vh-100">
             <div className="card shadow-lg p-4" style={{ width: "400px" }}>
-                <h2 className="text-center mb-4">Register</h2>
+                <h2 className="text-center mb-4">Kayıt Ol</h2>
                 <form>
                     <div className="mb-3">
                         <label htmlFor="name" className="form-label">
-                            Name
+                            Ad Soyad
                         </label>
                         <input
                             type="text"
                             id="name"
                             className="form-control"
-                            placeholder="Enter your name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Adınızı ve soyadınızı girin"
+                            value={isim}
+                            onChange={(e) => setIsim(e.target.value)}
                         />
                     </div>
                     <div className="mb-3">
-                        <label htmlFor="email" className="form-label">
-                            Email
+                        <label htmlFor="username" className="form-label">
+                            Kullanıcı Adı
                         </label>
                         <input
-                            type="email"
-                            id="email"
+                            type="text"
+                            id="username"
                             className="form-control"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Kullanıcı adınızı girin"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
                     <div className="mb-3">
                         <label htmlFor="password" className="form-label">
-                            Password
+                            Şifre
                         </label>
                         <input
                             type="password"
                             id="password"
                             className="form-control"
-                            placeholder="Enter your password"
+                            placeholder="Şifrenizi girin"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
@@ -74,15 +74,15 @@ const Register: React.FC = () => {
                             className="btn btn-primary"
                             onClick={handleRegister}
                         >
-                            Register
+                            Kayıt Ol
                         </button>
                     </div>
                 </form>
                 <div className="text-center mt-3">
                     <p>
-                        Already have an account?{" "}
+                        Zaten hesabınız var mı?{" "}
                         <a href="/login" className="text-decoration-none">
-                            Login here
+                            Buradan giriş yapın
                         </a>
                     </p>
                 </div>

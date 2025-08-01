@@ -4,53 +4,77 @@ import { useNavigate } from "react-router-dom";
 
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const handleLogin = async () => {
         try {
-            const response = await axios.post("http://localhost:5000/api/users/login", {
-                email,
+            console.log("🔐 Login işlemi başlatılıyor...");
+            console.log("📝 Kullanıcı adı:", username);
+            
+            const response = await axios.post("http://localhost:5000/api/login", {
+                username,
                 password,
             });
-            const { access_token } = response.data;
-
-            localStorage.setItem("token", access_token); // Token'ı sakla
-            navigate("/"); // Ana sayfaya yönlendir
+            
+            console.log("✅ Login başarılı, response:", response.data);
+            
+            const { token } = response.data; // access_token yerine token kullan
+            
+            console.log("🔑 Token alındı:", token ? "Token var" : "Token yok");
+            
+            // Token'ı hem token hem de access_token olarak kaydet (uyumluluk için)
+            localStorage.setItem("token", token);
+            localStorage.setItem("access_token", token);
+            localStorage.setItem("username",username);
+            
+            console.log("💾 Token localStorage'a kaydedildi");
+            
+            // Custom event tetikle
+            window.dispatchEvent(new Event('authStateChanged'));
+            console.log("🎯 authStateChanged event tetiklendi");
+            
+            // Kısa bir gecikme ile navigate et
+            setTimeout(() => {
+                console.log("🚀 Ana sayfaya yönlendiriliyor...");
+                navigate("/");
+            }, 100);
+            
         } catch (err: any) {
-            setError("Invalid email or password");
+            console.error("❌ Login hatası:", err);
+            setError("Geçersiz kullanıcı adı veya şifre");
         }
     };
 
     return (
         <div className="container d-flex align-items-center justify-content-center vh-100">
             <div className="card shadow-lg p-4" style={{ width: "400px" }}>
-                <h2 className="text-center mb-4">Login</h2>
+                <h2 className="text-center mb-4">Giriş Yap</h2>
                 <form>
                     <div className="mb-3">
                         <label htmlFor="email" className="form-label">
-                            Email
+                            Kullanıcı Adı
                         </label>
                         <input
-                            type="email"
+                            type="text"
                             id="email"
                             className="form-control"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Kullanıcı adınızı girin"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
                     <div className="mb-3">
                         <label htmlFor="password" className="form-label">
-                            Password
+                            Şifre
                         </label>
                         <input
                             type="password"
                             id="password"
                             className="form-control"
-                            placeholder="Enter your password"
+                            placeholder="Şifrenizi girin"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
@@ -62,15 +86,15 @@ const Login: React.FC = () => {
                             className="btn btn-primary"
                             onClick={handleLogin}
                         >
-                            Login
+                            Giriş Yap
                         </button>
                     </div>
                 </form>
                 <div className="text-center mt-3">
                     <p>
-                        Don't have an account?{" "}
+                        Hesabınız yok mu?{" "}
                         <a href="/register" className="text-decoration-none">
-                            Register here
+                            Buradan kayıt olun
                         </a>
                     </p>
                 </div>
