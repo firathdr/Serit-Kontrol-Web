@@ -15,6 +15,8 @@ const Home: React.FC = () => {
                     userInfo = {
                         username: payload.username || payload.sub,
                         exp: payload.exp,
+                        name: payload.name,
+                        role: payload.role,
                         iat: payload.iat
                     };
                 } catch (error) {

@@ -3,5 +3,14 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",            // <= Bu satır çok önemli!
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",            // veya "react"
+    "esModuleInterop": true,
+    "strict": true,
+
+  }
 }

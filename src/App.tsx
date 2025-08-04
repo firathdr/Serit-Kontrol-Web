@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Register from "./pages/register.tsx";
 import Araclar from "./pages/araclar.tsx"
 import ItirazList from "./pages/itiraz.tsx";
+import Admin from "./pages/admin.tsx";
 const App: React.FC = () => {
     return (
         <Router>
@@ -16,6 +17,7 @@ const App: React.FC = () => {
                 <Route path="/register" element={<Register />} />
                 <Route path="/araclar" element={<Araclar/>} />
                 <Route path="/itirazlarim" element={<ItirazList />} />
+                <Route path="/admin" element={<Admin />} />
 
             </Routes>
         </Router>

@@ -5,22 +5,26 @@ const Navbar: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [username, setUsername] = useState<string | null>(null);
     const navigate = useNavigate();
-    const location = useLocation();
+    const [role,setRole] = useState<string | null>(null);
+
+    //const location = useLocation();
 
     const checkAuthStatus = () => {
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-        
-        console.log("🔍 Token kontrol ediliyor:", token ? "✅ Token var" : "❌ Token yok");
-        
+        if (token) {
+            const decoded = parseJwt(token); // Token'ı çözümle
+            if (decoded && decoded.role) {
+                 setRole(decoded.role);
+            }
+
+        }
         if (token) {
             try {
                 // JWT token'ı decode et
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 const currentTime = Date.now() / 1000;
-                
-                console.log("📋 Token payload:", payload);
-                
-                // Token'ın geçerliliğini kontrol et
+
+
                 if (payload.exp && payload.exp < currentTime) {
                     console.warn("⏰ Token süresi dolmuş");
                     localStorage.removeItem("token");
@@ -32,8 +36,6 @@ const Navbar: React.FC = () => {
                 
                 // Backend'den gelen username field'ını kullan
                 const user = payload.username || payload.sub || payload.name || "Kullanıcı";
-                console.log("👤 Kullanıcı adı:", user);
-                
                 setUsername(user);
                 setIsLoggedIn(true);
             } catch (error) {
@@ -93,6 +95,24 @@ const Navbar: React.FC = () => {
         
         navigate("/login");
     };
+    const parseJwt = (token: string) => {
+        try {
+            const base64Url = token.split(".")[1];
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/"); // Base64 formatını düzelt
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split("")
+                    .map((c) => {
+                        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                    })
+                    .join("")
+            );
+            return JSON.parse(jsonPayload); // JSON olarak çöz
+        } catch (e) {
+            console.error("Invalid JWT token", e);
+            return null;
+        }
+    };
 
     return (
         <nav style={styles.navbar}>
@@ -102,7 +122,14 @@ const Navbar: React.FC = () => {
                 {isLoggedIn && (
                     <>
                         <Link to="/araclar" style={styles.link}>Araçlar</Link>
+                        {role === "admin" && (
+
+                            <Link to="/admin" style={styles.link}>
+                                Admin
+                            </Link>
+                        )}
                         <Link to="/itirazlarim" style={styles.link}>İtirazlarım</Link>
+
                         <span style={styles.user}>👤 {username}</span>
                         <button onClick={handleLogout} style={styles.button}>Çıkış Yap</button>
                     </>
