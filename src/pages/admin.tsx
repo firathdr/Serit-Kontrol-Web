@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import UserManagement from "../adminpage/userManagement.tsx"
 import AdminItirazListesi from "../adminpage/itirazManagement.tsx"
-//import BookManagement from "../adminpage/userManagement.tsx"
+import AdminAracListesi from "../adminpage/aracManagement.tsx"
 
 
 const Admin: React.FC = () => {
@@ -47,8 +47,10 @@ const Admin: React.FC = () => {
                 </li>
             </ul>
             <div className="mt-4">
+                {activeTab === "Araçlar" && <AdminAracListesi />}
                 {activeTab === "Kullanıcılar" && <UserManagement />}
                 {activeTab === "İtirazlar" && <AdminItirazListesi />}
+
             </div>
         </div>
     );

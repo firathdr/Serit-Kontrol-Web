@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
 import Home from "./pages/home.tsx";
 import Login from "./pages/login.tsx"
 import Navbar from "./components/Navbar";
@@ -18,6 +19,8 @@ const App: React.FC = () => {
                 <Route path="/araclar" element={<Araclar/>} />
                 <Route path="/itirazlarim" element={<ItirazList />} />
                 <Route path="/admin" element={<Admin />} />
+
+
 
             </Routes>
         </Router>

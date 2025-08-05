@@ -8,7 +8,9 @@ interface Arac {
     serit_id: number;
     ihlal_durumu: number;
     video_name: string;
+    goruntu?: string; // base64 string
 }
+
 
 interface FilterState {
     aracId: string;
@@ -23,6 +25,7 @@ const Araclar: React.FC = () => {
     const [araclar, setAraclar] = useState<Arac[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [filters, setFilters] = useState<FilterState>({
         aracId: '',
         girisZamani: '',
@@ -38,23 +41,23 @@ const Araclar: React.FC = () => {
                 console.log("🚗 Araçlar yükleniyor...");
                 const token = localStorage.getItem("token") || localStorage.getItem("access_token");
                 console.log("🔑 Token:", token ? "Var" : "Yok");
-                
+
                 if (!token) {
                     setError("Token bulunamadı. Lütfen tekrar giriş yapın.");
                     setLoading(false);
                     return;
                 }
-                
+
                 const response = await axios.get('http://localhost:5000/api/araclar', {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                
+
                 console.log("✅ API Response:", response.data);
                 console.log("📊 Response type:", typeof response.data);
                 console.log("📊 Is Array:", Array.isArray(response.data));
-                
+
                 // API response formatını kontrol et
                 if (response.data && response.data.data && Array.isArray(response.data.data)) {
                     console.log("📋 Data array formatında");
@@ -69,13 +72,13 @@ const Araclar: React.FC = () => {
                     console.warn("⚠️ Beklenmeyen API response formatı:", response.data);
                     setAraclar([]);
                 }
-                
+
                 setError("");
             } catch (error: any) {
                 console.error('❌ Veri alınamadı:', error);
                 console.error('❌ Error response:', error.response?.data);
                 console.error('❌ Error status:', error.response?.status);
-                
+
                 if (error.response?.status === 401) {
                     setError("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
                 } else if (error.response?.status === 404) {
@@ -204,8 +207,8 @@ const Araclar: React.FC = () => {
             <div className="p-4">
                 <div className="text-center py-8">
                     <div className="text-red-500 text-xl">Hata: {error}</div>
-                    <button 
-                        onClick={() => window.location.reload()} 
+                    <button
+                        onClick={() => window.location.reload()}
                         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
                     >
                         Tekrar Dene
@@ -218,7 +221,7 @@ const Araclar: React.FC = () => {
     return (
         <div className="p-4">
             <h1 className="text-xl font-bold mb-4">Araç Listesi</h1>
-            
+
             {/* Debug bilgisi */}
             {import.meta.env.DEV && (
                 <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
@@ -229,7 +232,7 @@ const Araclar: React.FC = () => {
             {/* Gelişmiş Filtreleme */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h2 className="text-lg font-semibold mb-4">Filtreleme</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Araç ID */}
                         <label className="block text-sm font-medium mb-1">Araç ID</label>
@@ -308,7 +311,7 @@ const Araclar: React.FC = () => {
             {/* Sonuç Bilgisi */}
             <div className="mb-4 text-sm text-gray-600">
                 {filteredAraclar.length} araç bulundu
-                {filters.aracId || filters.girisZamani || filters.saat || filters.seritId || filters.ihlalDurumu || filters.videoName ? 
+                {filters.aracId || filters.girisZamani || filters.saat || filters.seritId || filters.ihlalDurumu || filters.videoName ?
                     ` (${araclar.length} toplam araçtan filtrelenmiş)` : ''}
             </div>
 
@@ -322,10 +325,12 @@ const Araclar: React.FC = () => {
                         <th className="border px-4 py-2">Saat</th>
                         <th className="border px-4 py-2">Şerit ID</th>
                         <th className="border px-4 py-2">İhlal</th>
+                        <th className="border px-4 py-2">Görsel</th> {/* ✅ Yeni */}
                         <th className="border px-4 py-2">Video</th>
                         <th className="border px-4 py-2">İtiraz</th>
                     </tr>
                     </thead>
+
                     <tbody>
                     {filteredAraclar.map((arac, index) => (
                         <tr key={index} className="text-center hover:bg-gray-50">
@@ -334,24 +339,47 @@ const Araclar: React.FC = () => {
                             <td className="border px-4 py-2">{arac.saat || 'Yok'}</td>
                             <td className="border px-4 py-2">{arac.serit_id ?? 'Yok'}</td>
                             <td className="border px-4 py-2">
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                    arac.ihlal_durumu === 1 
-                                        ? 'bg-red-100 text-red-800' 
-                                        : 'bg-green-100 text-green-800'
-                                }`}>
-                                    {arac.ihlal_durumu === 1 ? 'İhlal Var' : 'Yok'}
-                                </span>
+        <span className={`px-2 py-1 rounded text-xs ${
+            arac.ihlal_durumu === 1
+                ? 'bg-red-100 text-red-800'
+                : 'bg-green-100 text-green-800'
+        }`}>
+            {arac.ihlal_durumu === 1 ? 'İhlal Var' : 'Yok'}
+        </span>
+                            </td>
+                            <td className="border px-4 py-2 cursor-pointer">
+                                {arac.goruntu ? (
+                                    <img
+                                        src={`data:image/jpeg;base64,${arac.goruntu}`}
+                                        alt={`Araç ${arac.arac_id}`}
+                                        className="rounded mx-auto object-cover w-[150px] h-[100px] cursor-pointer"
+                                        onClick={() => {
+                                            console.log('Resme tıklandı:', arac.arac_id);
+                                            setSelectedImage(`data:image/jpeg;base64,${arac.goruntu}`);
+                                        }}
+                                        style={{
+                                            width: '150px',
+                                            height: '100px',
+                                            objectFit: 'cover',
+                                            display: 'block',
+                                            margin: '0 auto',
+                                        }}
+                                    />
+                                ) : (
+                                    'Yok'
+                                )}
                             </td>
                             <td className="border px-4 py-2">{arac.video_name || 'Yok'}</td>
                             <td className="border px-4 py-2">
                                 <button
                                     className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
-                                    onClick={() => handleItirazEt(arac.arac_id, arac.video_name,arac.ihlal_durumu)}
+                                    onClick={() => handleItirazEt(arac.arac_id, arac.video_name, arac.ihlal_durumu)}
                                 >
                                     İtiraz Et
                                 </button>
                             </td>
                         </tr>
+
                     ))}
                     {filteredAraclar.length === 0 && (
                         <tr>
@@ -363,6 +391,26 @@ const Araclar: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div className="relative" onClick={e => e.stopPropagation()}>
+                        <img
+                            src={selectedImage}
+                            alt="Büyütülmüş Görsel"
+                            className="max-w-full max-h-screen rounded shadow-lg"
+                        />
+                        <button
+                            className="absolute top-2 right-2 text-white text-3xl font-bold"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

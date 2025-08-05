@@ -8,10 +8,11 @@ interface Itiraz {
     video_name: string;
     durum: string;
     sebep: string;
-    giris_zamani: string;
-    saat: string;
-    serit_id: number;
-    ihlal_durumu: string;
+    arac_giris_zamani: string;
+    arac_cikis_zamani: string;
+    arac_goruntu?: string;
+    serit_id?: number;
+    ihlal_durumu?: string | number;
 }
 
 const AdminItirazListesi: React.FC = () => {
@@ -22,15 +23,13 @@ const AdminItirazListesi: React.FC = () => {
     useEffect(() => {
         const fetchItirazlar = async () => {
             try {
-                const token = localStorage.getItem('token'); // JWT token'ı localStorage’dan al
+                const token = localStorage.getItem('token');
                 const response = await axios.get('http://localhost:5000/api/admin/itirazlar', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                     withCredentials: true,
                 });
                 setItirazlar(response.data.data);
-            } catch (error: any) {
+            } catch (error) {
                 console.error(error);
                 setHata('İtirazlar yüklenirken hata oluştu.');
             } finally {
@@ -41,41 +40,115 @@ const AdminItirazListesi: React.FC = () => {
         fetchItirazlar();
     }, []);
 
-    if (loading) return <div>Yükleniyor...</div>;
-    if (hata) return <div style={{ color: 'red' }}>{hata}</div>;
+    const handleItirazDurumu = async (
+        username: string,
+        arac_id: number,
+        video_name: string,
+        durum: 'onaylandi' | 'reddedildi'
+    ) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put('http://localhost:5000/api/admin/itiraz', {
+                username,
+                arac_id,
+                video_name,
+                durum,
+            }, {
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true,
+            });
+
+            setItirazlar(prev =>
+                prev.map(itiraz =>
+                    itiraz.username === username &&
+                    itiraz.arac_id === arac_id &&
+                    itiraz.video_name === video_name
+                        ? { ...itiraz, durum }
+                        : itiraz
+                )
+            );
+        } catch (error) {
+            console.error("İtiraz durumu güncellenirken hata:", error);
+            alert("Güncelleme başarısız.");
+        }
+    };
+
+
+    if (loading) return <div className="text-center mt-4">Yükleniyor...</div>;
+    if (hata) return <div className="text-danger text-center mt-4">{hata}</div>;
 
     return (
-        <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Tüm İtirazlar</h2>
-            <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-300">
-                    <thead>
-                    <tr className="bg-gray-100">
-                        <th className="px-4 py-2 border">#</th>
-                        <th className="px-4 py-2 border">Kullanıcı</th>
-                        <th className="px-4 py-2 border">Araç ID</th>
-                        <th className="px-4 py-2 border">Video</th>
-                        <th className="px-4 py-2 border">Durum</th>
-                        <th className="px-4 py-2 border">Sebep</th>
-                        <th className="px-4 py-2 border">Giriş Zamanı</th>
-                        <th className="px-4 py-2 border">Saat</th>
-                        <th className="px-4 py-2 border">Şerit</th>
-                        <th className="px-4 py-2 border">İhlal Durumu</th>
+        <div className="container mt-5">
+            <h2 className="mb-4">Tüm İtirazlar</h2>
+            <div className="table-responsive">
+                <table className="table table-bordered table-striped table-hover align-middle text-center">
+                    <thead className="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Kullanıcı</th>
+                        <th>Araç ID</th>
+                        <th>Video</th>
+                        <th>Sebep</th>
+                        <th>Giriş</th>
+                        <th>Çıkış</th>
+                        <th>Şerit</th>
+                        <th>İhlal</th>
+                        <th>Araç Görüntü</th>
+                        <th>İhlal Video</th>
+                        <th>Durum</th>
+                        <th>İşlem</th>
                     </tr>
                     </thead>
                     <tbody>
                     {itirazlar.map((itiraz, index) => (
-                        <tr key={itiraz.id} className="text-center hover:bg-gray-50">
-                            <td className="border px-4 py-2">{index + 1}</td>
-                            <td className="border px-4 py-2">{itiraz.username}</td>
-                            <td className="border px-4 py-2">{itiraz.arac_id}</td>
-                            <td className="border px-4 py-2">{itiraz.video_name}</td>
-                            <td className="border px-4 py-2">{itiraz.durum}</td>
-                            <td className="border px-4 py-2">{itiraz.sebep}</td>
-                            <td className="border px-4 py-2">{itiraz.giris_zamani}</td>
-                            <td className="border px-4 py-2">{itiraz.saat}</td>
-                            <td className="border px-4 py-2">{itiraz.serit_id}</td>
-                            <td className="border px-4 py-2">{itiraz.ihlal_durumu}</td>
+                        <tr key={itiraz.id}>
+                            <td>{index + 1}</td>
+                            <td>{itiraz.username}</td>
+                            <td>{itiraz.arac_id}</td>
+                            <td>{itiraz.video_name}</td>
+                            <td>{itiraz.sebep}</td>
+                            <td>{itiraz.arac_giris_zamani || 'Yok'}</td>
+                            <td>{itiraz.arac_cikis_zamani || 'Yok'}</td>
+                            <td>{itiraz.serit_id ?? 'Yok'}</td>
+                            <td>{itiraz.ihlal_durumu ?? 'Bilinmiyor'}</td>
+                            <td>
+                                {itiraz.arac_goruntu ? (
+                                    <img
+                                        src={`data:image/jpeg;base64,${itiraz.arac_goruntu}`}
+                                        alt={`Araç ${itiraz.arac_id}`}
+                                        className="img-thumbnail"
+                                        style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                    />
+                                ) : 'Yok'}
+                            </td>
+                            <td>
+                                {itiraz.video_name ? (
+                                    <button
+                                        className="btn btn-sm btn-primary"
+                                        onClick={() => {
+                                            const videoUrl = `http://localhost:5000/api/videos/${itiraz.video_name}?start=${itiraz.arac_giris_zamani}&end=${itiraz.arac_cikis_zamani}`;
+                                            window.open(videoUrl, '_blank');
+                                        }}
+                                    >
+                                        İzle
+                                    </button>
+                                ) : 'Yok'}
+                            </td>
+                            <td>{itiraz.durum}</td>
+                            <td>
+                                <button
+                                    onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'onaylandi')}
+                                >
+                                    Onayla
+                                </button>
+
+                                <button
+                                    onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'reddedildi')}
+                                >
+                                    Reddet
+                                </button>
+
+                            </td>
                         </tr>
                     ))}
                     </tbody>
