@@ -26,7 +26,7 @@ const UserManagement: React.FC = () => {
             });
             const data = await response.json();
             if (response.ok) {
-                setUsers(data.kullanicilar); // array geliyor
+                setUsers(data.kullanicilar);
             } else {
                 setError(data.message || "Kullanıcılar alınamadı");
             }
@@ -49,12 +49,8 @@ const UserManagement: React.FC = () => {
                 body: JSON.stringify({ username }),
             });
             const data = await response.json();
-            if (response.ok) {
-                alert(data.message);
-                fetchUsers(); // listeyi güncelle
-            } else {
-                alert(data.message);
-            }
+            alert(data.message);
+            if (response.ok) fetchUsers();
         } catch {
             alert("Sunucu hatası oluştu");
         }
@@ -74,51 +70,62 @@ const UserManagement: React.FC = () => {
                 body: JSON.stringify({ username }),
             });
             const data = await response.json();
-            if (response.ok) {
-                alert(data.message);
-                fetchUsers();
-            } else {
-                alert(data.message);
-            }
+            alert(data.message);
+            if (response.ok) fetchUsers();
         } catch {
             alert("Sunucu hatası oluştu");
         }
     };
 
     return (
-        <div style={{ padding: "20px" }}>
-            <h2>Admin Paneli - Kullanıcı Listesi</h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+        <div className="container mt-5">
+            <h2 className="mb-4">🛠️ Admin Paneli - Kullanıcı Yönetimi</h2>
 
-            <table border={1} cellPadding={10} style={{ marginTop: "20px", borderCollapse: "collapse" }}>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>İsim</th>
-                    <th>Kullanıcı Adı</th>
-                    <th>Rol</th>
-                    <th>İşlemler</th>
-                </tr>
-                </thead>
-                <tbody>
-                {users.map((user) => (
-                    <tr key={user.id}>
-                        <td>{user.id}</td>
-                        <td>{user.isim}</td>
-                        <td>{user.username}</td>
-                        <td>{user.rol}</td>
-                        <td>
-                            {user.rol !== "admin" && (
-                                <button onClick={() => makeAdmin(user.username)}>Admin Yap</button>
-                            )}
-                            <button onClick={() => deleteUser(user.username)} style={{ marginLeft: "10px" }}>
-                                Sil
-                            </button>
-                        </td>
+            {error && <div className="alert alert-danger">{error}</div>}
+
+            <div className="table-responsive">
+                <table className="table table-striped table-hover">
+                    <thead className="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>İsim</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Rol</th>
+                        <th>İşlemler</th>
                     </tr>
-                ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {users.map((user) => (
+                        <tr key={user.id}>
+                            <td>{user.id}</td>
+                            <td>{user.isim}</td>
+                            <td>{user.username}</td>
+                            <td>
+                                    <span className={`badge ${user.rol === "admin" ? "bg-success" : "bg-secondary"}`}>
+                                        {user.rol}
+                                    </span>
+                            </td>
+                            <td>
+                                {user.rol !== "admin" && (
+                                    <button
+                                        className="btn btn-sm btn-primary me-2"
+                                        onClick={() => makeAdmin(user.username)}
+                                    >
+                                        Admin Yap
+                                    </button>
+                                )}
+                                <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() => deleteUser(user.username)}
+                                >
+                                    Sil
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

@@ -11,10 +11,13 @@
   },
   "dependencies": {
     "axios": "^1.11.0",
+    "bootstrap": "^5.3.7",
     "jwt-decode": "^4.0.0",
     "react": "^19.1.0",
+    "react-bootstrap": "^2.10.10",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.7.1"
+    "react-router-dom": "^7.7.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

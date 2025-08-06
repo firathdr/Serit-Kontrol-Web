@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // useNavigate hook'unu import ediyoruz
 
 interface Itiraz {
     id: number;
@@ -13,63 +14,36 @@ interface Itiraz {
 
 const ItirazList: React.FC = () => {
     const [itirazlar, setItirazlar] = useState<Itiraz[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate(); // useNavigate hook'unu çağırıyoruz
 
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-        
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-        
+
         if (!token) {
             setError("Token bulunamadı. Lütfen tekrar giriş yapın.");
             setLoading(false);
             return;
         }
-        
-        axios.get('http://localhost:5000/api/itiraz_kayit', {
+
+        axios.get("http://localhost:5000/api/itiraz_kayit", {
             headers: {
-                Authorization: `Bearer ${token}`,
-            },
+                Authorization: `Bearer ${token}`
+            }
         })
-            .then((response) => {
-                console.log('API Response:', response.data);
-                console.log('Response data type:', typeof response.data);
-                console.log('Response data structure:', response.data);
-                
-                // Farklı response yapılarını kontrol edelim
-                let rawData;
-                if (response.data && response.data.data) {
-                    rawData = response.data.data;
-                } else if (Array.isArray(response.data)) {
+            .then(response => {
+                let rawData: any[] = [];
+
+                if (Array.isArray(response.data)) {
                     rawData = response.data;
-                } else {
-                    console.error('Unexpected response structure:', response.data);
-                    setItirazlar([]);
-                    setLoading(false);
-                    return;
-                }
-                
-                console.log('Raw data:', rawData);
-                console.log('Raw data type:', typeof rawData);
-                console.log('Is rawData array?', Array.isArray(rawData));
-                console.log('First item in raw data:', rawData[0]);
-
-                // Güvenli kontrol ekleyelim
-                if (!rawData || !Array.isArray(rawData)) {
-                    console.error('Raw data is not an array:', rawData);
-                    setItirazlar([]);
-                    setLoading(false);
-                    return;
+                } else if (response.data && response.data.data) {
+                    rawData = response.data.data;
                 }
 
-                // Diziyi nesneye çevir - API'den gelen veri yapısına göre ayarlayalım
-                const formattedData = rawData.map((item: any, index: number) => {
-                    console.log(`Item ${index}:`, item);
-                    
-                    // Eğer item bir array ise (eski format)
+                const formatted = rawData.map((item: any, index: number): Itiraz => {
                     if (Array.isArray(item)) {
+                        // Eğer backend tuple döndürüyorsa (sütun sırasına dikkat edin)
                         return {
                             id: item[0] || index,
                             username: item[1] || 'Bilinmiyor',
@@ -77,138 +51,136 @@ const ItirazList: React.FC = () => {
                             video_name: item[3] || 'Bilinmiyor',
                             durum: item[4] || 'Beklemede',
                             sebep: item[5] || 'Belirtilmemiş',
-                            itiraz_durumu: item[6] || item[6] || 'Beklemede'
+                            itiraz_durumu: item[6] || 'Beklemede'
+                        };
+                    } else {
+                        // Eğer backend JSON obje döndürüyorsa
+                        return {
+                            id: item.id || item.ID || index, // id veya ID olabilir
+                            username: item.username || item.email || 'Bilinmiyor', // username veya email olabilir
+                            arac_id: item.arac_id || 0,
+                            video_name: item.video_name || 'Bilinmiyor',
+                            durum: item.durum || 'Beklemede',
+                            sebep: item.sebep || 'Belirtilmemiş',
+                            itiraz_durumu: item.itiraz_durumu || 'Beklemede'
                         };
                     }
-                    
-                    return {
-                        id: item.id || item.ID || index,
-                        username: item.username || item.Username || item.email || 'Bilinmiyor',
-                        arac_id: item.arac_id || item.aracId || item.arac_id || 0,
-                        video_name: item.video_name || item.videoName || item.video_name || 'Bilinmiyor',
-                        durum: item.durum || item.Durum || 'Beklemede',
-                        sebep: item.sebep || item.Sebep || 'Belirtilmemiş',
-                        itiraz_durumu: item.itiraz_durumu || item.itiraz_durumu || 'Beklemede'
-                    };
                 });
 
-                console.log('Formatted data:', formattedData);
-                setItirazlar(formattedData);
+                setItirazlar(formatted);
                 setLoading(false);
             })
-            .catch((error) => {
-                console.error('Veri çekme hatası:', error);
-                setError('Veri çekme hatası oluştu');
-                setItirazlar([]); // Hata durumunda boş dizi
+            .catch(err => {
+                console.error("API Hatası:", err);
+                setError("Veri çekilirken bir hata oluştu.");
                 setLoading(false);
             });
     }, []);
 
-    // Durum badge'ini renklendirme fonksiyonu
-    const getStatusBadge = (durum: string) => {
+    // Durum rozeti (badge) için yardımcı fonksiyon
+    const getDurumBadge = (durum: string = '') => {
         switch (durum.toLowerCase()) {
-            case 'onaylandı':
-                return <span className="badge bg-success">Onaylandı</span>;
-            case 'reddedildi':
-                return <span className="badge bg-danger">Reddedildi</span>;
-            case 'beklemede':
-                return <span className="badge bg-warning text-dark">Beklemede</span>;
+            case 'ihlal':
+                return <span className="badge bg-danger">İhlal Var</span>;
+            case 'temiz':
+                return <span className="badge bg-success">İhlal Yok</span>;
             default:
                 return <span className="badge bg-secondary">{durum}</span>;
         }
     };
 
+    // İtiraz durumu rozeti (badge) için yardımcı fonksiyon
+    const getItirazBadge = (itirazDurumu: string = '') => {
+        switch (itirazDurumu.toLowerCase()) {
+            case 'onaylandı':
+            case 'onaylandi':
+                return <span className="badge bg-success">İtiraz Onaylandı</span>;
+            case 'reddedildi':
+                return <span className="badge bg-danger">İtiraz Reddedildi</span>;
+            default:
+                return <span className="badge bg-warning text-dark">Beklemede</span>;
+        }
+    };
+
+    // Detay sayfasına yönlendirme fonksiyonu
+    const handleViewDetails = (username: string, aracId: number, videoName: string) => {
+        // React Router'da tanımladığınız URL yapısına göre yönlendirme yapın
+        // Örneğin: /itirazlar/:username/:arac_id/:video_name
+        navigate(`/itirazlar/${username}/${aracId}/${videoName}`);
+    };
+
     if (loading) {
         return (
-            <div className="container-fluid" style={{ backgroundColor: '#F2F2F2', minHeight: '100vh' }}>
-                <div className="row justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-                    <div className="col-md-6 text-center">
-                        <div className="spinner-border text-primary" role="status" style={{ color: '#049DD9' }}>
-                            <span className="visually-hidden">Yükleniyor...</span>
-                        </div>
-                        <p className="mt-3" style={{ color: '#243E73' }}>Veriler yükleniyor...</p>
-                    </div>
-                </div>
+            <div className="text-center p-5">
+                <div className="spinner-border text-primary" role="status" />
+                <p className="mt-3">Yükleniyor...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="container-fluid" style={{ backgroundColor: '#F2F2F2', minHeight: '100vh' }}>
-                <div className="row justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-                    <div className="col-md-6">
-                        <div className="alert alert-danger text-center" role="alert">
-                            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                            Hata: {error}
-                        </div>
-                    </div>
-                </div>
+            <div className="alert alert-danger text-center m-5" role="alert">
+                <i className="bi bi-exclamation-triangle me-2"></i>
+                {error}
             </div>
         );
     }
 
     if (itirazlar.length === 0) {
         return (
-            <div className="container-fluid" style={{ backgroundColor: '#F2F2F2', minHeight: '100vh' }}>
-                <div className="row justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-                    <div className="col-md-6 text-center">
-                        <div className="card shadow-sm" style={{ backgroundColor: '#8BBBD9', border: 'none' }}>
-                            <div className="card-body">
-                                <i className="bi bi-inbox display-1" style={{ color: '#243E73' }}></i>
-                                <h4 className="mt-3" style={{ color: '#243E73' }}>Hiç itiraz kaydı bulunamadı</h4>
-                                <p className="text-muted">Henüz itiraz kaydınız bulunmamaktadır.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div className="text-center p-5">
+                <i className="bi bi-inbox fs-1 text-muted"></i>
+                <h4 className="mt-3">Hiç itiraz kaydı bulunamadı.</h4>
+                <p className="text-muted">Henüz sistemde kayıtlı bir itirazınız yok.</p>
             </div>
         );
     }
 
     return (
-        <div className="container-fluid" style={{ backgroundColor: '#F2F2F2', minHeight: '100vh', padding: '20px' }}>
-            <div className="row">
-                <div className="col-12">
-                    <div className="card shadow-sm" style={{ backgroundColor: '#8BBBD9', border: 'none', borderRadius: '15px' }}>
-                        <div className="card-header" style={{ backgroundColor: '#049DD9', color: 'white', borderRadius: '15px 15px 0 0', border: 'none' }}>
-                            <h2 className="mb-0">
-                                <i className="bi bi-clipboard-data me-2"></i>
-                                İtiraz Kayıtlarınız
-                            </h2>
-                        </div>
-                        <div className="card-body">
-                            <div className="table-responsive">
-                                <table className="table table-hover">
-                                    <thead>
-                                        <tr style={{ backgroundColor: '#243E73', color: 'white' }}>
-                                            <th scope="col">ID</th>
-                                            <th scope="col">Kullanıcı</th>
-                                            <th scope="col">Araç ID</th>
-                                            <th scope="col">Video Adı</th>
-                                            <th scope="col">Durum</th>
-                                            <th scope="col">Sebep</th>
-                                            <th scope="col">İtiraz Durumu</th>
-
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {itirazlar.map((itiraz, index) => (
-                                            <tr key={itiraz.id || index} style={{ backgroundColor: index % 2 === 0 ? 'white' : '#F2F2F2' }}>
-                                                <td style={{ color: '#021F59', fontWeight: 'bold' }}>{itiraz.id}</td>
-                                                <td style={{ color: '#243E73' }}>{itiraz.username}</td>
-                                                <td style={{ color: '#243E73' }}>{itiraz.arac_id}</td>
-                                                <td style={{ color: '#243E73' }}>{itiraz.video_name}</td>
-                                                <td>{getStatusBadge(itiraz.durum)}</td>
-                                                <td style={{ color: '#243E73' }}>{itiraz.sebep}</td>
-                                                <td style={{ color: '#243E73' }}>{itiraz.itiraz_durumu}</td>
-
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+        <div className="container mt-4">
+            <div className="card shadow">
+                <div className="card-header bg-primary text-white">
+                    <h5 className="mb-0"><i className="bi bi-clipboard-check me-2"></i>İtiraz Kayıtlarınız</h5>
+                </div>
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table table-hover mb-0">
+                            <thead className="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Kullanıcı</th>
+                                <th>Araç ID</th>
+                                <th>Video</th>
+                                <th>Durum</th>
+                                <th>İtiraz Sebebi</th>
+                                <th>İtiraz Durumu</th>
+                                <th>İşlemler</th> {/* Yeni sütun başlığı */}
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {itirazlar.map((item, i) => (
+                                <tr key={`${item.id}-${i}`}>
+                                    <td><strong>{item.id}</strong></td>
+                                    <td>{item.username}</td>
+                                    <td>{item.arac_id}</td>
+                                    <td>{item.video_name}</td>
+                                    <td>{getDurumBadge(item.durum)}</td>
+                                    <td>{item.sebep}</td>
+                                    <td>{getItirazBadge(item.itiraz_durumu)}</td>
+                                    <td>
+                                        {/* Detay butonunu ekliyoruz */}
+                                        <button
+                                            className="btn btn-info btn-sm"
+                                            onClick={() => handleViewDetails(item.username, item.arac_id, item.video_name)}
+                                        >
+                                            <i className="bi bi-eye me-1"></i>Detayı Görüntüle
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

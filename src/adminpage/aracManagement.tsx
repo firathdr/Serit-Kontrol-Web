@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Spinner, Alert } from "react-bootstrap";
+import { Table, Button, Modal, Form, Spinner, Alert, Row, Col } from "react-bootstrap";
 import axios from "axios";
 
 interface Arac {
     arac_id: number;
     giris_zamani: string;
-    saat: string;           // çıkış zamanı
+    saat: string;
     serit_id: number | null;
     ihlal_durumu: string | null;
     video_name: string;
-    goruntu: string | null; // base64 image
+    goruntu: string | null;
+}
+
+interface FilterState {
+    aracId: string;
+    girisZamani: string;
+    saat: string;
+    seritId: string;
+    ihlalDurumu: string;
+    videoName: string;
 }
 
 const AdminAracListesi: React.FC = () => {
     const [araclar, setAraclar] = useState<Arac[]>([]);
+    const [filteredAraclar, setFilteredAraclar] = useState<Arac[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
     const [modalShow, setModalShow] = useState<boolean>(false);
@@ -22,10 +32,22 @@ const AdminAracListesi: React.FC = () => {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [feedbackMsg, setFeedbackMsg] = useState<string>("");
 
-    // Araçları backend'den çek
+    const [filters, setFilters] = useState<FilterState>({
+        aracId: "",
+        girisZamani: "",
+        saat: "",
+        seritId: "",
+        ihlalDurumu: "",
+        videoName: "",
+    });
+
     useEffect(() => {
         fetchAraclar();
     }, []);
+
+    useEffect(() => {
+        applyFilters();
+    }, [filters, araclar]);
 
     const fetchAraclar = async () => {
         setLoading(true);
@@ -45,27 +67,42 @@ const AdminAracListesi: React.FC = () => {
         }
     };
 
-    // Modal aç - seçilen aracı ayarla
+    const applyFilters = () => {
+        const filtered = araclar.filter((arac) => {
+            return (
+                (filters.aracId === "" || arac.arac_id.toString().includes(filters.aracId)) &&
+                (filters.girisZamani === "" || arac.giris_zamani.includes(filters.girisZamani)) &&
+                (filters.saat === "" || arac.saat.includes(filters.saat)) &&
+                (filters.seritId === "" || arac.serit_id?.toString().includes(filters.seritId)) &&
+                (filters.ihlalDurumu === "" || arac.ihlal_durumu === filters.ihlalDurumu) &&
+                (filters.videoName === "" || arac.video_name.includes(filters.videoName))
+            );
+        });
+        setFilteredAraclar(filtered);
+    };
+
     const handleSettingsClick = (arac: Arac) => {
         setSelectedArac(arac);
         setFeedbackMsg("");
         setModalShow(true);
     };
 
-    // Modal kapat
     const handleModalClose = () => {
         setModalShow(false);
         setSelectedArac(null);
     };
 
-    // Form input değişimi
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         if (!selectedArac) return;
         const { name, value } = e.target;
         setSelectedArac({ ...selectedArac, [name]: value });
     };
 
-    // Kaydetme işlemi
+    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFilters({ ...filters, [name]: value });
+    };
+
     const handleSave = async () => {
         if (!selectedArac) return;
         setSaving(true);
@@ -95,7 +132,6 @@ const AdminAracListesi: React.FC = () => {
         }
     };
 
-    // Silme işlemi
     const handleDelete = async () => {
         if (!selectedArac) return;
         if (!window.confirm("Bu aracı silmek istediğinize emin misiniz?")) return;
@@ -125,6 +161,22 @@ const AdminAracListesi: React.FC = () => {
         <div className="container mt-4">
             <h2>Tüm Araçlar</h2>
 
+            {/* Filtreler */}
+            <Row className="mb-3">
+                <Col><Form.Control placeholder="Araç ID" name="aracId" value={filters.aracId} onChange={handleFilterChange} /></Col>
+                <Col><Form.Control type="date" name="girisZamani" value={filters.girisZamani} onChange={handleFilterChange} /></Col>
+                <Col><Form.Control type="date" name="saat" value={filters.saat} onChange={handleFilterChange} /></Col>
+                <Col><Form.Control placeholder="Şerit ID" name="seritId" value={filters.seritId} onChange={handleFilterChange} /></Col>
+                <Col>
+                    <Form.Select name="ihlalDurumu" value={filters.ihlalDurumu} onChange={handleFilterChange}>
+                        <option value="">İhlal Durumu</option>
+                        <option value="ihlal">İhlal</option>
+                        <option value="ihlal yok">İhlal Yok</option>
+                    </Form.Select>
+                </Col>
+                <Col><Form.Control placeholder="Video Adı" name="videoName" value={filters.videoName} onChange={handleFilterChange} /></Col>
+            </Row>
+
             {loading && (
                 <div className="text-center my-4">
                     <Spinner animation="border" />
@@ -148,7 +200,7 @@ const AdminAracListesi: React.FC = () => {
                     </tr>
                     </thead>
                     <tbody>
-                    {araclar.map((arac) => (
+                    {filteredAraclar.map((arac) => (
                         <tr key={arac.arac_id}>
                             <td>{arac.arac_id}</td>
                             <td>{arac.giris_zamani}</td>
@@ -163,17 +215,10 @@ const AdminAracListesi: React.FC = () => {
                                         alt={`Araç ${arac.arac_id}`}
                                         style={{ width: 100, height: 60, objectFit: "cover", borderRadius: 4 }}
                                     />
-                                ) : (
-                                    "Yok"
-                                )}
+                                ) : "Yok"}
                             </td>
-                            <td className="text-center">
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => handleSettingsClick(arac)}
-                                >
-                                    <i className="bi bi-gear-fill"></i> {/* Bootstrap Icons kullanıyorsan */}
+                            <td>
+                                <Button variant="secondary" size="sm" onClick={() => handleSettingsClick(arac)}>
                                     Ayarlar
                                 </Button>
                             </td>
@@ -195,7 +240,7 @@ const AdminAracListesi: React.FC = () => {
                         </Alert>
                     )}
                     <Form>
-                        <Form.Group className="mb-3" controlId="formGirisZamani">
+                        <Form.Group className="mb-3">
                             <Form.Label>Giriş Zamanı</Form.Label>
                             <Form.Control
                                 type="datetime-local"
@@ -205,7 +250,7 @@ const AdminAracListesi: React.FC = () => {
                             />
                         </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formCikisZamani">
+                        <Form.Group className="mb-3">
                             <Form.Label>Çıkış Zamanı</Form.Label>
                             <Form.Control
                                 type="datetime-local"
@@ -215,7 +260,7 @@ const AdminAracListesi: React.FC = () => {
                             />
                         </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formSeritId">
+                        <Form.Group className="mb-3">
                             <Form.Label>Şerit ID</Form.Label>
                             <Form.Control
                                 type="number"
@@ -225,7 +270,7 @@ const AdminAracListesi: React.FC = () => {
                             />
                         </Form.Group>
 
-                        <Form.Group className="mb-3" controlId="formIhlalDurumu">
+                        <Form.Group className="mb-3">
                             <Form.Label>İhlal Durumu</Form.Label>
                             <Form.Select
                                 name="ihlal_durumu"

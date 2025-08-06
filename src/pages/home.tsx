@@ -1,82 +1,116 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import "../App.css";
+import "../index.css";
 
-const Home: React.FC = () => {
-    const [authInfo, setAuthInfo] = useState<any>({});
+const features = [
+  {
+    title: "Gerçek Zamanlı İzleme",
+    description: "Canlı video akışları üzerinden anlık ihlal tespiti ve takibi.",
+    image: "/camera.jpg",
+  },
+  {
+    title: "Hassas Araç Tespiti",
+    description: "Gelişmiş yapay zeka modelleri ile araçları doğru bir şekilde algılama.",
+    image: "/track.png",
+  },
+  {
+    title: "Otomatik İhlal Tespiti",
+    description: "Belirlenen kurallara göre otomatik şerit ihlali, park ihlali gibi durumları algılama.",
+    image: "/gui.png",
+  },
+  {
+    title: "Detaylı Raporlama",
+    description: "Tespit edilen ihlallerin fotoğraf, video klibi ve zaman bilgileriyle raporlanması.",
+    image: "/traffic.jpg",
+  },
+];
 
-    useEffect(() => {
-        const checkAuth = () => {
-            const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-            const isLoggedIn = !!token;
-            
-            let userInfo = {};
-            if (token) {
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    userInfo = {
-                        username: payload.username || payload.sub,
-                        exp: payload.exp,
-                        name: payload.name,
-                        role: payload.role,
-                        iat: payload.iat
-                    };
-                } catch (error) {
-                    console.error("Token parse hatası:", error);
-                }
-            }
-            
-            setAuthInfo({
-                isLoggedIn,
-                token: token ? "Token var" : "Token yok",
-                userInfo
-            });
-        };
-
-        checkAuth();
-        const interval = setInterval(checkAuth, 1000);
-        
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div style={{ padding: "20px" }}>
-            <h1>Ana Sayfa</h1>
-            
-            <div style={{ 
-                backgroundColor: "#f8f9fa", 
-                padding: "20px", 
-                borderRadius: "8px",
-                marginTop: "20px"
-            }}>
-                <h3>Debug Bilgileri:</h3>
-                <pre>{JSON.stringify(authInfo, null, 2)}</pre>
-            </div>
-            
-            <div style={{ marginTop: "20px" }}>
-                <h3>Test Butonları:</h3>
-                <button 
-                    onClick={() => {
-                        localStorage.setItem("test_token", "test");
-                        window.dispatchEvent(new Event('authStateChanged'));
-                    }}
-                    style={{ marginRight: "10px", padding: "10px" }}
-                >
-                    Test Token Ekle
-                </button>
-                
-                <button 
-                    onClick={() => {
-                        localStorage.removeItem("token");
-                        localStorage.removeItem("access_token");
-                        localStorage.removeItem("test_token");
-                        window.dispatchEvent(new Event('authStateChanged'));
-                    }}
-                    style={{ padding: "10px" }}
-                >
-                    Tüm Token'ları Temizle
-                </button>
-            </div>
-        </div>
-    );
+const HomePage: React.FC = () => {
+  return (
+    <div className="snap-container-home">
+      {features.map((feature) => (
+        <section
+          key={feature.title}
+          className="feature-section-full-home snap-section-home"
+          style={{
+            backgroundImage: `linear-gradient(rgba(44,62,80,0.7), rgba(44,62,80,0.7)), url(${feature.image})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          <div className="feature-content-full-home">
+            <h1>{feature.title}</h1>
+            <p>{feature.description}</p>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
 };
 
-export default Home;
+export default HomePage;
+
+// Sadece home sayfasına özel stiller
+const style = document.createElement('style');
+style.innerHTML = `
+.snap-container-home {
+  scroll-snap-type: y mandatory;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+}
+.snap-section-home {
+  scroll-snap-align: start;
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+.feature-section-full-home {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.4s;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+.feature-content-full-home {
+  background: rgba(44,62,80,0.65);
+  border-radius: 24px;
+  padding: 48px 32px;
+  box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+  text-align: center;
+  color: #fff;
+  max-width: 600px;
+}
+.feature-content-full-home h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+.feature-content-full-home p {
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+/* Scrollbar gizleme sadece home için */
+.snap-container-home::-webkit-scrollbar,
+.snap-section-home::-webkit-scrollbar {
+  display: none;
+}
+.snap-container-home,
+.snap-section-home {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+`;
+document.head.appendChild(style);

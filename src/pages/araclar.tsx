@@ -12,14 +12,14 @@ interface Arac {
 }
 
 
-interface FilterState {
-    aracId: string;
-    girisZamani: string;
-    saat: string;
-    seritId: string;
-    ihlalDurumu: string;
-    videoName: string;
-}
+    interface FilterState {
+        aracId: string;
+        girisZamani: string;
+        saat: string;
+        seritId: string;
+        ihlalDurumu: string;
+        videoName: string;
+    }
 
 const Araclar: React.FC = () => {
     const [araclar, setAraclar] = useState<Arac[]>([]);
@@ -34,6 +34,20 @@ const Araclar: React.FC = () => {
         ihlalDurumu: '',
         videoName: ''
     });
+
+    // ESC ile modal kapansın
+    useEffect(() => {
+        if (!selectedImage) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSelectedImage(null);
+        };
+        document.body.style.overflow = 'hidden'; // Modal açıkken arka plan kaymasın
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.body.style.overflow = '';
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [selectedImage]);
 
     useEffect(() => {
         const fetchAraclar = async () => {
@@ -393,18 +407,21 @@ const Araclar: React.FC = () => {
             </div>
             {selectedImage && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+                    className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 animate-fadein"
                     onClick={() => setSelectedImage(null)}
+                    style={{backdropFilter: 'blur(2px)'}}
                 >
-                    <div className="relative" onClick={e => e.stopPropagation()}>
+                    <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
                         <img
                             src={selectedImage}
                             alt="Büyütülmüş Görsel"
-                            className="max-w-full max-h-screen rounded shadow-lg"
+                            className="rounded shadow-lg max-w-full max-h-[80vh] border-4 border-white"
+                            style={{objectFit: 'contain', background: '#222'}}
                         />
                         <button
-                            className="absolute top-2 right-2 text-white text-3xl font-bold"
+                            className="absolute top-2 right-2 text-white text-4xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition"
                             onClick={() => setSelectedImage(null)}
+                            aria-label="Kapat"
                         >
                             &times;
                         </button>

@@ -1,30 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [username, setUsername] = useState<string | null>(null);
     const navigate = useNavigate();
-    const [role,setRole] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(null);
+    const [showNavbar, setShowNavbar] = useState(true);
 
-    //const location = useLocation();
+    // Navbar görünürlüğü için scroll kontrolü
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY < window.innerHeight * 0.7) {
+                setShowNavbar(true);
+            } else {
+                setShowNavbar(false);
+            }
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const checkAuthStatus = () => {
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
             const decoded = parseJwt(token); // Token'ı çözümle
             if (decoded && decoded.role) {
-                 setRole(decoded.role);
+                setRole(decoded.role);
             }
-
         }
         if (token) {
             try {
                 // JWT token'ı decode et
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 const currentTime = Date.now() / 1000;
-
-
                 if (payload.exp && payload.exp < currentTime) {
                     console.warn("⏰ Token süresi dolmuş");
                     localStorage.removeItem("token");
@@ -33,7 +42,6 @@ const Navbar: React.FC = () => {
                     setUsername(null);
                     return;
                 }
-                
                 // Backend'den gelen username field'ını kullan
                 const user = payload.username || payload.sub || payload.name || "Kullanıcı";
                 setUsername(user);
@@ -57,30 +65,25 @@ const Navbar: React.FC = () => {
     useEffect(() => {
         // İlk yükleme
         checkAuthStatus();
-        
         // Her 1 saniyede bir kontrol et (daha sık)
         const interval = setInterval(checkAuthStatus, 1000);
-        
         // localStorage değişikliklerini dinle
         const handleStorageChange = () => {
             console.log("💾 localStorage değişti, auth durumu kontrol ediliyor");
             checkAuthStatus();
         };
-        
         window.addEventListener('storage', handleStorageChange);
-        
         // Custom event listener for login/logout
         window.addEventListener('authStateChanged', () => {
             console.log("🎯 authStateChanged event tetiklendi");
             checkAuthStatus();
         });
-        
         return () => {
             clearInterval(interval);
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('authStateChanged', checkAuthStatus);
         };
-    }, []); // location.pathname'i kaldırdım çünkü sürekli kontrol ediyoruz
+    }, []);
 
     const handleLogout = () => {
         console.log("🚪 Çıkış yapılıyor...");
@@ -89,10 +92,8 @@ const Navbar: React.FC = () => {
         localStorage.removeItem("username");
         setIsLoggedIn(false);
         setUsername(null);
-        
         // Custom event tetikle
         window.dispatchEvent(new Event('authStateChanged'));
-        
         navigate("/login");
     };
     const parseJwt = (token: string) => {
@@ -114,27 +115,23 @@ const Navbar: React.FC = () => {
         }
     };
 
-    return (
-        <nav style={styles.navbar}>
-            <Link to="/" style={styles.logo}>🚗 Araç İhlal Sistemi</Link>
+    if (!showNavbar) return null;
 
+    return (
+        <nav style={{ ...styles.navbar, position: "fixed", width: "100vw", right: 0, left: 0, top: 0, zIndex: 1000 }}>
+            <Link to="/" style={styles.logo}>🚗 Araç İhlal Sistemi</Link>
             <div style={styles.menu}>
                 {isLoggedIn && (
                     <>
                         <Link to="/araclar" style={styles.link}>Araçlar</Link>
                         {role === "admin" && (
-
-                            <Link to="/admin" style={styles.link}>
-                                Admin
-                            </Link>
+                            <Link to="/admin" style={styles.link}>Admin</Link>
                         )}
                         <Link to="/itirazlarim" style={styles.link}>İtirazlarım</Link>
-
                         <span style={styles.user}>👤 {username}</span>
                         <button onClick={handleLogout} style={styles.button}>Çıkış Yap</button>
                     </>
                 )}
-
                 {!isLoggedIn && (
                     <>
                         <Link to="/login" style={styles.link}>Giriş Yap</Link>
@@ -142,7 +139,6 @@ const Navbar: React.FC = () => {
                     </>
                 )}
             </div>
-            
             {/* Debug bilgisi - sadece geliştirme ortamında göster */}
             {import.meta.env.DEV && (
                 <div style={{position: 'absolute', top: '5px', right: '5px', fontSize: '10px', color: '#95a5a6'}}>
@@ -155,7 +151,6 @@ const Navbar: React.FC = () => {
 
 export default Navbar;
 
-// Basit stiller
 const styles = {
     navbar: {
         backgroundColor: "#2c3e50",
@@ -189,9 +184,6 @@ const styles = {
         transition: "color 0.3s ease",
         padding: "8px 12px",
         borderRadius: "4px",
-        ":hover": {
-            color: "#3498db",
-        }
     },
     user: {
         color: "#bdc3c7",
@@ -208,8 +200,5 @@ const styles = {
         fontSize: "14px",
         fontWeight: "500" as const,
         transition: "background-color 0.3s ease",
-        ":hover": {
-            backgroundColor: "#c0392b",
-        }
     }
 };

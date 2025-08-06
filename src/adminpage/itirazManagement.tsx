@@ -26,7 +26,6 @@ const AdminItirazListesi: React.FC = () => {
                 const token = localStorage.getItem('token');
                 const response = await axios.get('http://localhost:5000/api/admin/itirazlar', {
                     headers: { Authorization: `Bearer ${token}` },
-                    withCredentials: true,
                 });
                 setItirazlar(response.data.data);
             } catch (error) {
@@ -54,10 +53,13 @@ const AdminItirazListesi: React.FC = () => {
                 video_name,
                 durum,
             }, {
-                headers: { Authorization: `Bearer ${token}` },
-                withCredentials: true,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
+            // Frontend'de durumu güncelle
             setItirazlar(prev =>
                 prev.map(itiraz =>
                     itiraz.username === username &&
@@ -69,19 +71,18 @@ const AdminItirazListesi: React.FC = () => {
             );
         } catch (error) {
             console.error("İtiraz durumu güncellenirken hata:", error);
-            alert("Güncelleme başarısız.");
+            alert("İtiraz güncellenemedi. Lütfen tekrar deneyin.");
         }
     };
-
 
     if (loading) return <div className="text-center mt-4">Yükleniyor...</div>;
     if (hata) return <div className="text-danger text-center mt-4">{hata}</div>;
 
     return (
         <div className="container mt-5">
-            <h2 className="mb-4">Tüm İtirazlar</h2>
+            <h2 className="mb-4">İtirazlar Listesi</h2>
             <div className="table-responsive">
-                <table className="table table-bordered table-striped table-hover align-middle text-center">
+                <table className="table table-bordered table-hover align-middle text-center">
                     <thead className="table-light">
                     <tr>
                         <th>#</th>
@@ -93,15 +94,15 @@ const AdminItirazListesi: React.FC = () => {
                         <th>Çıkış</th>
                         <th>Şerit</th>
                         <th>İhlal</th>
-                        <th>Araç Görüntü</th>
-                        <th>İhlal Video</th>
+                        <th>Görüntü</th>
+                        <th>Video</th>
                         <th>Durum</th>
                         <th>İşlem</th>
                     </tr>
                     </thead>
                     <tbody>
                     {itirazlar.map((itiraz, index) => (
-                        <tr key={itiraz.id}>
+                        <tr key={`${itiraz.id}-${index}`}>
                             <td>{index + 1}</td>
                             <td>{itiraz.username}</td>
                             <td>{itiraz.arac_id}</td>
@@ -122,32 +123,30 @@ const AdminItirazListesi: React.FC = () => {
                                 ) : 'Yok'}
                             </td>
                             <td>
-                                {itiraz.video_name ? (
-                                    <button
-                                        className="btn btn-sm btn-primary"
-                                        onClick={() => {
-                                            const videoUrl = `http://localhost:5000/api/videos/${itiraz.video_name}?start=${itiraz.arac_giris_zamani}&end=${itiraz.arac_cikis_zamani}`;
-                                            window.open(videoUrl, '_blank');
-                                        }}
-                                    >
-                                        İzle
-                                    </button>
-                                ) : 'Yok'}
+                                <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() => {
+                                        const videoUrl = `http://localhost:5000/api/videos/${itiraz.video_name}?start=${itiraz.arac_giris_zamani}&end=${itiraz.arac_cikis_zamani}`;
+                                        window.open(videoUrl, '_blank');
+                                    }}
+                                >
+                                    İzle
+                                </button>
                             </td>
                             <td>{itiraz.durum}</td>
                             <td>
                                 <button
+                                    className="btn btn-sm btn-success me-2"
                                     onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'onaylandi')}
                                 >
                                     Onayla
                                 </button>
-
                                 <button
+                                    className="btn btn-sm btn-danger"
                                     onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'reddedildi')}
                                 >
                                     Reddet
                                 </button>
-
                             </td>
                         </tr>
                     ))}
