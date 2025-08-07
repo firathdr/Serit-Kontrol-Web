@@ -32,11 +32,9 @@ const Login: React.FC = () => {
             
             console.log("💾 Token localStorage'a kaydedildi");
             
-            // Custom event tetikle
             window.dispatchEvent(new Event('authStateChanged'));
             console.log("🎯 authStateChanged event tetiklendi");
             
-            // Kısa bir gecikme ile navigate et
             setTimeout(() => {
                 console.log("🚀 Ana sayfaya yönlendiriliyor...");
                 navigate("/");

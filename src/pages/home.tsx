@@ -5,22 +5,22 @@ import "../index.css";
 const features = [
   {
     title: "Gerçek Zamanlı İzleme",
-    description: "Canlı video akışları üzerinden anlık ihlal tespiti ve takibi.",
+    description: "Sistem, canlı video akışları üzerinden araçları gerçek zamanlı olarak izler. PyQt arayüzü ile kullanıcılara anlık görüntü aktarılır. Gelişmiş threading yapısı ile yüksek performanslı görüntü işleme sağlanır.",
     image: "/camera.jpg",
   },
   {
     title: "Hassas Araç Tespiti",
-    description: "Gelişmiş yapay zeka modelleri ile araçları doğru bir şekilde algılama.",
+    description: "YOLO (You Only Look Once) nesne tespiti modeli kullanılarak araçlar hızlı ve doğru şekilde algılanır. Tespit edilen her araca benzersiz bir ID atanır ve takip sistemiyle hareketleri izlenir. Araç bilgileri otomatik veritabanına kaydedilir.",
     image: "/track.png",
   },
   {
     title: "Otomatik İhlal Tespiti",
-    description: "Belirlenen kurallara göre otomatik şerit ihlali, park ihlali gibi durumları algılama.",
+    description: "Sistem, kullanıcı tarafından tanımlanan kurallara göre otomatik olarak ihlal tespiti yapar. Şerit ihlali, yasak park veya ters yönde ilerleme gibi senaryolar desteklenir. Tüm ihlaller, yapay zeka destekli analiz algoritmalarıyla belirlenir.",
     image: "/gui.png",
   },
   {
     title: "Detaylı Raporlama",
-    description: "Tespit edilen ihlallerin fotoğraf, video klibi ve zaman bilgileriyle raporlanması.",
+    description: "Her ihlal; aracın plakası, ihlal anına ait görüntü, kısa video klip, zaman damgası ve ihlal tipi ile birlikte sisteme kaydedilir. Kullanıcılar, PyQt arayüzü üzerinden bu verilere kolayca erişebilir ve dışa aktarım gerçekleştirebilir.",
     image: "/traffic.jpg",
   },
 ];
@@ -51,7 +51,6 @@ const HomePage: React.FC = () => {
 
 export default HomePage;
 
-// Sadece home sayfasına özel stiller
 const style = document.createElement('style');
 style.innerHTML = `
 .snap-container-home {

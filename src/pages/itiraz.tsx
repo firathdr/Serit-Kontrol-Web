@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // useNavigate hook'unu import ediyoruz
+import { useNavigate } from 'react-router-dom';
 
 interface Itiraz {
     id: number;
@@ -16,7 +16,7 @@ const ItirazList: React.FC = () => {
     const [itirazlar, setItirazlar] = useState<Itiraz[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate(); // useNavigate hook'unu çağırıyoruz
+    const navigate = useNavigate();
 
     useEffect(() => {
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
@@ -43,7 +43,6 @@ const ItirazList: React.FC = () => {
 
                 const formatted = rawData.map((item: any, index: number): Itiraz => {
                     if (Array.isArray(item)) {
-                        // Eğer backend tuple döndürüyorsa (sütun sırasına dikkat edin)
                         return {
                             id: item[0] || index,
                             username: item[1] || 'Bilinmiyor',
@@ -54,10 +53,9 @@ const ItirazList: React.FC = () => {
                             itiraz_durumu: item[6] || 'Beklemede'
                         };
                     } else {
-                        // Eğer backend JSON obje döndürüyorsa
                         return {
-                            id: item.id || item.ID || index, // id veya ID olabilir
-                            username: item.username || item.email || 'Bilinmiyor', // username veya email olabilir
+                            id: item.id || item.ID || index,
+                            username: item.username || item.email || 'Bilinmiyor',
                             arac_id: item.arac_id || 0,
                             video_name: item.video_name || 'Bilinmiyor',
                             durum: item.durum || 'Beklemede',
@@ -77,7 +75,6 @@ const ItirazList: React.FC = () => {
             });
     }, []);
 
-    // Durum rozeti (badge) için yardımcı fonksiyon
     const getDurumBadge = (durum: string = '') => {
         switch (durum.toLowerCase()) {
             case 'ihlal':
@@ -89,7 +86,6 @@ const ItirazList: React.FC = () => {
         }
     };
 
-    // İtiraz durumu rozeti (badge) için yardımcı fonksiyon
     const getItirazBadge = (itirazDurumu: string = '') => {
         switch (itirazDurumu.toLowerCase()) {
             case 'onaylandı':
@@ -102,10 +98,7 @@ const ItirazList: React.FC = () => {
         }
     };
 
-    // Detay sayfasına yönlendirme fonksiyonu
     const handleViewDetails = (username: string, aracId: number, videoName: string) => {
-        // React Router'da tanımladığınız URL yapısına göre yönlendirme yapın
-        // Örneğin: /itirazlar/:username/:arac_id/:video_name
         navigate(`/itirazlar/${username}/${aracId}/${videoName}`);
     };
 
@@ -155,7 +148,7 @@ const ItirazList: React.FC = () => {
                                 <th>Durum</th>
                                 <th>İtiraz Sebebi</th>
                                 <th>İtiraz Durumu</th>
-                                <th>İşlemler</th> {/* Yeni sütun başlığı */}
+                                <th>İşlemler</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -169,12 +162,11 @@ const ItirazList: React.FC = () => {
                                     <td>{item.sebep}</td>
                                     <td>{getItirazBadge(item.itiraz_durumu)}</td>
                                     <td>
-                                        {/* Detay butonunu ekliyoruz */}
                                         <button
                                             className="btn btn-info btn-sm"
                                             onClick={() => handleViewDetails(item.username, item.arac_id, item.video_name)}
                                         >
-                                            <i className="bi bi-eye me-1"></i>Detayı Görüntüle
+                                            <i className="bi bi-eye me-1"></i>Detay
                                         </button>
                                     </td>
                                 </tr>

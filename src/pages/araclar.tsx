@@ -11,15 +11,14 @@ interface Arac {
     goruntu?: string; // base64 string
 }
 
-
-    interface FilterState {
-        aracId: string;
-        girisZamani: string;
-        saat: string;
-        seritId: string;
-        ihlalDurumu: string;
-        videoName: string;
-    }
+interface FilterState {
+    aracId: string;
+    girisZamani: string;
+    saat: string;
+    seritId: string;
+    ihlalDurumu: string;
+    videoName: string;
+}
 
 const Araclar: React.FC = () => {
     const [araclar, setAraclar] = useState<Arac[]>([]);
@@ -35,13 +34,12 @@ const Araclar: React.FC = () => {
         videoName: ''
     });
 
-    // ESC ile modal kapansın
     useEffect(() => {
         if (!selectedImage) return;
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setSelectedImage(null);
         };
-        document.body.style.overflow = 'hidden'; // Modal açıkken arka plan kaymasın
+        document.body.style.overflow = 'hidden';
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             document.body.style.overflow = '';
@@ -52,10 +50,7 @@ const Araclar: React.FC = () => {
     useEffect(() => {
         const fetchAraclar = async () => {
             try {
-                console.log("🚗 Araçlar yükleniyor...");
                 const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-                console.log("🔑 Token:", token ? "Var" : "Yok");
-
                 if (!token) {
                     setError("Token bulunamadı. Lütfen tekrar giriş yapın.");
                     setLoading(false);
@@ -63,36 +58,21 @@ const Araclar: React.FC = () => {
                 }
 
                 const response = await axios.get('http://localhost:5000/api/araclar', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
-                console.log("✅ API Response:", response.data);
-                console.log("📊 Response type:", typeof response.data);
-                console.log("📊 Is Array:", Array.isArray(response.data));
-
-                // API response formatını kontrol et
                 if (response.data && response.data.data && Array.isArray(response.data.data)) {
-                    console.log("📋 Data array formatında");
                     setAraclar(response.data.data);
                 } else if (Array.isArray(response.data)) {
-                    console.log("📋 Direct array formatında");
                     setAraclar(response.data);
                 } else if (response.data && response.data.araclar && Array.isArray(response.data.araclar)) {
-                    console.log("📋 Araclar field formatında");
                     setAraclar(response.data.araclar);
                 } else {
-                    console.warn("⚠️ Beklenmeyen API response formatı:", response.data);
                     setAraclar([]);
                 }
 
                 setError("");
             } catch (error: any) {
-                console.error('❌ Veri alınamadı:', error);
-                console.error('❌ Error response:', error.response?.data);
-                console.error('❌ Error status:', error.response?.status);
-
                 if (error.response?.status === 401) {
                     setError("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
                 } else if (error.response?.status === 404) {
@@ -109,25 +89,22 @@ const Araclar: React.FC = () => {
         fetchAraclar();
     }, []);
 
-
-    const handleItirazEt = async (aracId: number, video_n: string,ihlal1:number) => {
-
+    const handleItirazEt = async (aracId: number, video_n: string, ihlal1: number) => {
         try {
             const sebep = window.prompt("İtiraz sebebinizi yazınız:");
-
             if (!sebep) {
                 alert("İtiraz iptal edildi. Sebep girilmedi.");
                 return;
             }
 
-            const response = await axios.post(
+            await axios.post(
                 "http://localhost:5000/api/itiraz_et",
                 {
                     username: localStorage.getItem('username'),
                     arac_id: aracId,
                     video_name: video_n,
                     sebep: sebep,
-                    ihlal:ihlal1
+                    ihlal: ihlal1
                 },
                 {
                     headers: {
@@ -136,19 +113,14 @@ const Araclar: React.FC = () => {
                 }
             );
 
-            console.log("✅ İtiraz başarılı:", response.data);
             alert("İtirazınız başarıyla gönderildi!");
         } catch (error: any) {
-            console.error('❌ İtiraz hatası:', error);
             alert("İtiraz gönderilirken hata oluştu: " + (error.response?.data?.message || 'Bilinmeyen hata'));
         }
     };
 
     const handleFilterChange = (field: keyof FilterState, value: string) => {
-        setFilters(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setFilters(prev => ({ ...prev, [field]: value }));
     };
 
     const clearFilters = () => {
@@ -163,54 +135,31 @@ const Araclar: React.FC = () => {
     };
 
     const filteredAraclar = araclar.filter(arac => {
-        // Araç ID filtresi
-        if (filters.aracId && !arac.arac_id.toString().includes(filters.aracId)) {
-            return false;
-        }
-
-        // Giriş zamanı filtresi
+        if (filters.aracId && !arac.arac_id.toString().includes(filters.aracId)) return false;
         if (filters.girisZamani && arac.giris_zamani) {
             const girisDate = new Date(arac.giris_zamani);
             const filterDate = new Date(filters.girisZamani);
-            if (girisDate.toDateString() !== filterDate.toDateString()) {
-                return false;
-            }
+            if (girisDate.toDateString() !== filterDate.toDateString()) return false;
         }
-
-        // Saat filtresi
-        if (filters.saat && arac.saat && !arac.saat.includes(filters.saat)) {
-            return false;
-        }
-
-        // Şerit ID filtresi
-        if (filters.seritId && arac.serit_id && !arac.serit_id.toString().includes(filters.seritId)) {
-            return false;
-        }
-
-        // İhlal durumu filtresi
+        if (filters.saat && arac.saat && !arac.saat.includes(filters.saat)) return false;
+        if (filters.seritId && arac.serit_id && !arac.serit_id.toString().includes(filters.seritId)) return false;
         if (filters.ihlalDurumu !== '') {
             const ihlalVar = filters.ihlalDurumu === 'var';
-            if (ihlalVar && arac.ihlal_durumu !== 1) {
-                return false;
-            }
-            if (!ihlalVar && arac.ihlal_durumu === 1) {
-                return false;
-            }
+            if (ihlalVar && arac.ihlal_durumu !== 1) return false;
+            if (!ihlalVar && arac.ihlal_durumu === 1) return false;
         }
-
-        // Video ismi filtresi
-        if (filters.videoName && arac.video_name && !arac.video_name.toLowerCase().includes(filters.videoName.toLowerCase())) {
-            return false;
-        }
-
+        if (filters.videoName && arac.video_name && !arac.video_name.toLowerCase().includes(filters.videoName.toLowerCase())) return false;
         return true;
     });
 
     if (loading) {
         return (
-            <div className="p-4">
-                <div className="text-center py-8">
-                    <div className="text-xl">Yükleniyor...</div>
+            <div className="d-flex justify-content-center align-items-center vh-100">
+                <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <div className="mt-3">Yükleniyor...</div>
                 </div>
             </div>
         );
@@ -218,13 +167,11 @@ const Araclar: React.FC = () => {
 
     if (error) {
         return (
-            <div className="p-4">
-                <div className="text-center py-8">
-                    <div className="text-red-500 text-xl">Hata: {error}</div>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-                    >
+            <div className="container mt-5">
+                <div className="alert alert-danger text-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    {error}
+                    <button onClick={() => window.location.reload()} className="btn btn-primary ms-3">
                         Tekrar Dene
                     </button>
                 </div>
@@ -233,198 +180,194 @@ const Araclar: React.FC = () => {
     }
 
     return (
-        <div className="p-4">
-            <h1 className="text-xl font-bold mb-4">Araç Listesi</h1>
+        <div className="container-fluid py-4">
+            <h1 className="text-primary mb-4">
+                <i className="bi bi-car-front-fill me-2"></i>
+                Araç Listesi
+            </h1>
 
-            {/* Debug bilgisi */}
-            {import.meta.env.DEV && (
-                <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
-                    <strong>Debug:</strong> {araclar.length} araç bulundu, {filteredAraclar.length} filtrelenmiş
+            {/* Filtreleme Paneli */}
+            <div className="card shadow-sm mb-4">
+                <div className="card-header bg-primary text-white">
+                    <h5 className="mb-0">
+                        <i className="bi bi-funnel-fill me-2"></i>
+                        Filtreleme
+                    </h5>
                 </div>
-            )}
-
-            {/* Gelişmiş Filtreleme */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h2 className="text-lg font-semibold mb-4">Filtreleme</h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Araç ID */}
-                        <label className="block text-sm font-medium mb-1">Araç ID</label>
-                        <input
-                            type="text"
-                            placeholder="Araç ID ara..."
-                            value={filters.aracId}
-                            onChange={(e) => handleFilterChange('aracId', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-
-                    {/* Giriş Zamanı */}
-                        <label className="block text-sm font-medium mb-1">Giriş Zamanı</label>
-                        <input
-                            type="date"
-                            value={filters.girisZamani}
-                            onChange={(e) => handleFilterChange('girisZamani', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-
-                    {/* Saat */}
-                        <label className="block text-sm font-medium mb-1">Saat</label>
-                        <input
-                            type="text"
-                            placeholder="Saat ara..."
-                            value={filters.saat}
-                            onChange={(e) => handleFilterChange('saat', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-
-                    {/* Şerit ID */}
-                        <label className="block text-sm font-medium mb-1">Şerit ID</label>
-                        <input
-                            type="text"
-                            placeholder="Şerit ID ara..."
-                            value={filters.seritId}
-                            onChange={(e) => handleFilterChange('seritId', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-
-                    {/* İhlal Durumu */}
-                        <label className="block text-sm font-medium mb-1">İhlal Durumu</label>
-                        <select
-                            value={filters.ihlalDurumu}
-                            onChange={(e) => handleFilterChange('ihlalDurumu', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Tümü</option>
-                            <option value="var">İhlal Var</option>
-                            <option value="yok">İhlal Yok</option>
-                        </select>
-
-
-                    {/* Video İsmi */}
-                        <label className="block text-sm font-medium mb-1">Video İsmi</label>
-                        <input
-                            type="text"
-                            placeholder="Video ismi ara..."
-                            value={filters.videoName}
-                            onChange={(e) => handleFilterChange('videoName', e.target.value)}
-                            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                </div>
-
-                {/* Filtre Temizle Butonu */}
-                <div className="mt-4">
-                    <button
-                        onClick={clearFilters}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-                    >
-                        Filtreleri Temizle
-                    </button>
-                </div>
-            </div>
-
-            {/* Sonuç Bilgisi */}
-            <div className="mb-4 text-sm text-gray-600">
-                {filteredAraclar.length} araç bulundu
-                {filters.aracId || filters.girisZamani || filters.saat || filters.seritId || filters.ihlalDurumu || filters.videoName ?
-                    ` (${araclar.length} toplam araçtan filtrelenmiş)` : ''}
-            </div>
-
-            {/* Tablo */}
-            <div className="overflow-x-auto">
-                <table className="min-w-full table-auto border border-gray-300">
-                    <thead>
-                    <tr className="bg-gray-200 text-center">
-                        <th className="border px-4 py-2">Araç ID</th>
-                        <th className="border px-4 py-2">Giriş Zamanı</th>
-                        <th className="border px-4 py-2">Saat</th>
-                        <th className="border px-4 py-2">Şerit ID</th>
-                        <th className="border px-4 py-2">İhlal</th>
-                        <th className="border px-4 py-2">Görsel</th> {/* ✅ Yeni */}
-                        <th className="border px-4 py-2">Video</th>
-                        <th className="border px-4 py-2">İtiraz</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    {filteredAraclar.map((arac, index) => (
-                        <tr key={index} className="text-center hover:bg-gray-50">
-                            <td className="border px-4 py-2 font-medium">{arac.arac_id}</td>
-                            <td className="border px-4 py-2">{arac.giris_zamani || 'Yok'}</td>
-                            <td className="border px-4 py-2">{arac.saat || 'Yok'}</td>
-                            <td className="border px-4 py-2">{arac.serit_id ?? 'Yok'}</td>
-                            <td className="border px-4 py-2">
-        <span className={`px-2 py-1 rounded text-xs ${
-            arac.ihlal_durumu === 1
-                ? 'bg-red-100 text-red-800'
-                : 'bg-green-100 text-green-800'
-        }`}>
-            {arac.ihlal_durumu === 1 ? 'İhlal Var' : 'Yok'}
-        </span>
-                            </td>
-                            <td className="border px-4 py-2 cursor-pointer">
-                                {arac.goruntu ? (
-                                    <img
-                                        src={`data:image/jpeg;base64,${arac.goruntu}`}
-                                        alt={`Araç ${arac.arac_id}`}
-                                        className="rounded mx-auto object-cover w-[150px] h-[100px] cursor-pointer"
-                                        onClick={() => {
-                                            console.log('Resme tıklandı:', arac.arac_id);
-                                            setSelectedImage(`data:image/jpeg;base64,${arac.goruntu}`);
-                                        }}
-                                        style={{
-                                            width: '150px',
-                                            height: '100px',
-                                            objectFit: 'cover',
-                                            display: 'block',
-                                            margin: '0 auto',
-                                        }}
-                                    />
-                                ) : (
-                                    'Yok'
-                                )}
-                            </td>
-                            <td className="border px-4 py-2">{arac.video_name || 'Yok'}</td>
-                            <td className="border px-4 py-2">
-                                <button
-                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
-                                    onClick={() => handleItirazEt(arac.arac_id, arac.video_name, arac.ihlal_durumu)}
-                                >
-                                    İtiraz Et
-                                </button>
-                            </td>
-                        </tr>
-
-                    ))}
-                    {filteredAraclar.length === 0 && (
-                        <tr>
-                            <td colSpan={7} className="py-8 text-center text-gray-500">
-                                {araclar.length === 0 ? 'Henüz araç verisi bulunmuyor.' : 'Filtre kriterlerine uygun araç bulunamadı.'}
-                            </td>
-                        </tr>
-                    )}
-                    </tbody>
-                </table>
-            </div>
-            {selectedImage && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 animate-fadein"
-                    onClick={() => setSelectedImage(null)}
-                    style={{backdropFilter: 'blur(2px)'}}
-                >
-                    <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
-                        <img
-                            src={selectedImage}
-                            alt="Büyütülmüş Görsel"
-                            className="rounded shadow-lg max-w-full max-h-[80vh] border-4 border-white"
-                            style={{objectFit: 'contain', background: '#222'}}
-                        />
+                <div className="card-body">
+                    <div className="row g-3">
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">Araç ID</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Araç ID ara..."
+                                value={filters.aracId}
+                                onChange={(e) => handleFilterChange('aracId', e.target.value)}
+                            />
+                        </div>
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">Giriş Zamanı</label>
+                            <input
+                                type="date"
+                                className="form-control"
+                                value={filters.girisZamani}
+                                onChange={(e) => handleFilterChange('girisZamani', e.target.value)}
+                            />
+                        </div>
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">Saat</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Saat ara..."
+                                value={filters.saat}
+                                onChange={(e) => handleFilterChange('saat', e.target.value)}
+                            />
+                        </div>
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">Şerit ID</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Şerit ID ara..."
+                                value={filters.seritId}
+                                onChange={(e) => handleFilterChange('seritId', e.target.value)}
+                            />
+                        </div>
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">İhlal Durumu</label>
+                            <select
+                                className="form-select"
+                                value={filters.ihlalDurumu}
+                                onChange={(e) => handleFilterChange('ihlalDurumu', e.target.value)}
+                            >
+                                <option value="">Tümü</option>
+                                <option value="var">İhlal Var</option>
+                                <option value="yok">İhlal Yok</option>
+                            </select>
+                        </div>
+                        <div className="col-md-4 col-lg-2">
+                            <label className="form-label">Video İsmi</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Video ismi ara..."
+                                value={filters.videoName}
+                                onChange={(e) => handleFilterChange('videoName', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-3 d-flex justify-content-between">
                         <button
-                            className="absolute top-2 right-2 text-white text-4xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition"
-                            onClick={() => setSelectedImage(null)}
-                            aria-label="Kapat"
+                            onClick={clearFilters}
+                            className="btn btn-outline-secondary"
                         >
-                            &times;
+                            <i className="bi bi-x-circle me-1"></i>
+                            Filtreleri Temizle
                         </button>
+                        <div className="text-muted">
+                            {filteredAraclar.length} araç bulundu
+                            {filters.aracId || filters.girisZamani || filters.saat || filters.seritId || filters.ihlalDurumu || filters.videoName ?
+                                ` (${araclar.length} toplam araçtan filtrelenmiş)` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Araç Tablosu */}
+            <div className="card shadow-sm">
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table table-hover table-striped mb-0">
+                            <thead className="table-dark">
+                            <tr>
+                                <th>Araç ID</th>
+                                <th>Giriş Zamanı</th>
+                                <th>Saat</th>
+                                <th>Şerit ID</th>
+                                <th>İhlal</th>
+                                <th>Görsel</th>
+                                <th>Video</th>
+                                <th>İşlemler</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {filteredAraclar.length > 0 ? (
+                                filteredAraclar.map((arac, index) => (
+                                    <tr key={index}>
+                                        <td className="fw-bold">{arac.arac_id}</td>
+                                        <td>{arac.giris_zamani || '-'}</td>
+                                        <td>{arac.saat || '-'}</td>
+                                        <td>{arac.serit_id ?? '-'}</td>
+                                        <td>
+                                                <span className={`badge ${arac.ihlal_durumu === 1 ? 'bg-danger' : 'bg-success'}`}>
+                                                    {arac.ihlal_durumu === 1 ? 'İhlal Var' : 'Yok'}
+                                                </span>
+                                        </td>
+                                        <td>
+                                            {arac.goruntu ? (
+                                                <img
+                                                    src={`data:image/jpeg;base64,${arac.goruntu}`}
+                                                    alt={`Araç ${arac.arac_id}`}
+                                                    className="img-thumbnail cursor-pointer"
+                                                    style={{ width: '100px', height: '60px', objectFit: 'cover' }}
+                                                    onClick={() => setSelectedImage(`data:image/jpeg;base64,${arac.goruntu}`)}
+                                                />
+                                            ) : (
+                                                <span className="text-muted">Yok</span>
+                                            )}
+                                        </td>
+                                        <td>{arac.video_name || '-'}</td>
+                                        <td>
+                                            <button
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={() => handleItirazEt(arac.arac_id, arac.video_name, arac.ihlal_durumu)}
+                                            >
+                                                <i className="bi bi-megaphone me-1"></i>
+                                                İtiraz Et
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={8} className="text-center py-4">
+                                        <div className="alert alert-warning mb-0">
+                                            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                            {araclar.length === 0 ? 'Henüz araç verisi bulunmuyor.' : 'Filtre kriterlerine uygun araç bulunamadı.'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* Büyük Görsel Modal */}
+            {selectedImage && (
+                <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+                    <div className="modal-dialog modal-dialog-centered modal-xl">
+                        <div className="modal-content border-0">
+                            <div className="modal-header border-0">
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    onClick={() => setSelectedImage(null)}
+                                    aria-label="Close"
+                                ></button>
+                            </div>
+                            <div className="modal-body text-center">
+                                <img
+                                    src={selectedImage}
+                                    alt="Büyütülmüş Görsel"
+                                    className="img-fluid rounded"
+                                    style={{ maxHeight: '80vh' }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

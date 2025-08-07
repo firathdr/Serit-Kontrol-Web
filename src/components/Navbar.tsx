@@ -8,7 +8,6 @@ const Navbar: React.FC = () => {
     const [role, setRole] = useState<string | null>(null);
     const [showNavbar, setShowNavbar] = useState(true);
 
-    // Navbar görünürlüğü için scroll kontrolü
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY < window.innerHeight * 0.7) {
@@ -24,14 +23,13 @@ const Navbar: React.FC = () => {
     const checkAuthStatus = () => {
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
-            const decoded = parseJwt(token); // Token'ı çözümle
+            const decoded = parseJwt(token);
             if (decoded && decoded.role) {
                 setRole(decoded.role);
             }
         }
         if (token) {
             try {
-                // JWT token'ı decode et
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 const currentTime = Date.now() / 1000;
                 if (payload.exp && payload.exp < currentTime) {
@@ -42,14 +40,12 @@ const Navbar: React.FC = () => {
                     setUsername(null);
                     return;
                 }
-                // Backend'den gelen username field'ını kullan
                 const user = payload.username || payload.sub || payload.name || "Kullanıcı";
                 setUsername(user);
                 setIsLoggedIn(true);
             } catch (error) {
                 console.warn("❌ Geçersiz JWT token:", error);
                 console.warn("Token içeriği:", token);
-                // Token geçersizse temizle
                 localStorage.removeItem("token");
                 localStorage.removeItem("access_token");
                 setIsLoggedIn(false);
@@ -63,17 +59,13 @@ const Navbar: React.FC = () => {
     };
 
     useEffect(() => {
-        // İlk yükleme
         checkAuthStatus();
-        // Her 1 saniyede bir kontrol et (daha sık)
         const interval = setInterval(checkAuthStatus, 1000);
-        // localStorage değişikliklerini dinle
         const handleStorageChange = () => {
             console.log("💾 localStorage değişti, auth durumu kontrol ediliyor");
             checkAuthStatus();
         };
         window.addEventListener('storage', handleStorageChange);
-        // Custom event listener for login/logout
         window.addEventListener('authStateChanged', () => {
             console.log("🎯 authStateChanged event tetiklendi");
             checkAuthStatus();
@@ -92,14 +84,13 @@ const Navbar: React.FC = () => {
         localStorage.removeItem("username");
         setIsLoggedIn(false);
         setUsername(null);
-        // Custom event tetikle
         window.dispatchEvent(new Event('authStateChanged'));
         navigate("/login");
     };
     const parseJwt = (token: string) => {
         try {
             const base64Url = token.split(".")[1];
-            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/"); // Base64 formatını düzelt
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
             const jsonPayload = decodeURIComponent(
                 atob(base64)
                     .split("")
@@ -108,7 +99,7 @@ const Navbar: React.FC = () => {
                     })
                     .join("")
             );
-            return JSON.parse(jsonPayload); // JSON olarak çöz
+            return JSON.parse(jsonPayload);
         } catch (e) {
             console.error("Invalid JWT token", e);
             return null;

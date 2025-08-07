@@ -6,13 +6,14 @@ interface Itiraz {
     username: string;
     arac_id: number;
     video_name: string;
-    durum: string;
-    sebep: string;
-    arac_giris_zamani: string;
-    arac_cikis_zamani: string;
+    durum: string; // Orijinal durum
+    itiraz_durumu?: string; // 'onaylandi' veya 'reddedildi'
+    sebep?: string;
+    arac_giris_zamani?: string;
+    arac_cikis_zamani?: string;
     arac_goruntu?: string;
     serit_id?: number;
-    ihlal_durumu?: string | number;
+    ihlal_durumu?: number;
 }
 
 const AdminItirazListesi: React.FC = () => {
@@ -43,35 +44,40 @@ const AdminItirazListesi: React.FC = () => {
         username: string,
         arac_id: number,
         video_name: string,
-        durum: 'onaylandi' | 'reddedildi'
+        yeniDurum: 'onaylandi' | 'reddedildi'
     ) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put('http://localhost:5000/api/admin/itiraz', {
-                username,
-                arac_id,
-                video_name,
-                durum,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            const response = await axios.put(
+                'http://localhost:5000/api/admin/itiraz',
+                {
+                    username,
+                    arac_id,
+                    video_name,
+                    durum: yeniDurum
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
-            });
+            );
 
-            // Frontend'de durumu güncelle
+            // State'i güncelle (itiraz_durumu alanını kullanarak)
             setItirazlar(prev =>
                 prev.map(itiraz =>
                     itiraz.username === username &&
                     itiraz.arac_id === arac_id &&
                     itiraz.video_name === video_name
-                        ? { ...itiraz, durum }
+                        ? { ...itiraz, itiraz_durumu: yeniDurum }
                         : itiraz
                 )
             );
+
         } catch (error) {
             console.error("İtiraz durumu güncellenirken hata:", error);
-            alert("İtiraz güncellenemedi. Lütfen tekrar deneyin.");
+            alert(`İtiraz güncellenemedi: ${error.response?.data?.error || error.message}`);
         }
     };
 
@@ -93,63 +99,89 @@ const AdminItirazListesi: React.FC = () => {
                         <th>Giriş</th>
                         <th>Çıkış</th>
                         <th>Şerit</th>
-                        <th>İhlal</th>
+                        <th>İhlal Durumu</th>
                         <th>Görüntü</th>
                         <th>Video</th>
-                        <th>Durum</th>
+                        <th>İtiraz Durumu</th>
                         <th>İşlem</th>
                     </tr>
                     </thead>
+
                     <tbody>
-                    {itirazlar.map((itiraz, index) => (
-                        <tr key={`${itiraz.id}-${index}`}>
-                            <td>{index + 1}</td>
-                            <td>{itiraz.username}</td>
-                            <td>{itiraz.arac_id}</td>
-                            <td>{itiraz.video_name}</td>
-                            <td>{itiraz.sebep}</td>
-                            <td>{itiraz.arac_giris_zamani || 'Yok'}</td>
-                            <td>{itiraz.arac_cikis_zamani || 'Yok'}</td>
-                            <td>{itiraz.serit_id ?? 'Yok'}</td>
-                            <td>{itiraz.ihlal_durumu ?? 'Bilinmiyor'}</td>
-                            <td>
-                                {itiraz.arac_goruntu ? (
-                                    <img
-                                        src={`data:image/jpeg;base64,${itiraz.arac_goruntu}`}
-                                        alt={`Araç ${itiraz.arac_id}`}
-                                        className="img-thumbnail"
-                                        style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-                                    />
-                                ) : 'Yok'}
-                            </td>
-                            <td>
-                                <button
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={() => {
-                                        const videoUrl = `http://localhost:5000/api/videos/${itiraz.video_name}?start=${itiraz.arac_giris_zamani}&end=${itiraz.arac_cikis_zamani}`;
-                                        window.open(videoUrl, '_blank');
-                                    }}
-                                >
-                                    İzle
-                                </button>
-                            </td>
-                            <td>{itiraz.durum}</td>
-                            <td>
-                                <button
-                                    className="btn btn-sm btn-success me-2"
-                                    onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'onaylandi')}
-                                >
-                                    Onayla
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-danger"
-                                    onClick={() => handleItirazDurumu(itiraz.username, itiraz.arac_id, itiraz.video_name, 'reddedildi')}
-                                >
-                                    Reddet
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
+                    {itirazlar.map((itiraz, index) => {
+                        const itirazDurumu = itiraz.itiraz_durumu || itiraz.durum;
+                        const isProcessed = itirazDurumu === 'onaylandi' || itirazDurumu === 'reddedildi';
+
+                        return (
+                            <tr key={`${itiraz.id}-${index}`}>
+                                <td>{index + 1}</td>
+                                <td>{itiraz.username}</td>
+                                <td>{itiraz.arac_id}</td>
+                                <td>{itiraz.video_name}</td>
+                                <td>{itiraz.sebep}</td>
+                                <td>{itiraz.arac_giris_zamani || 'Yok'}</td>
+                                <td>{itiraz.arac_cikis_zamani || 'Yok'}</td>
+                                <td>{itiraz.serit_id ?? 'Yok'}</td>
+                                <td>
+                                    {itiraz.ihlal_durumu === 1 ? 'İhlal Var' :
+                                        itiraz.ihlal_durumu === 0 ? 'İhlal Yok' :
+                                            'Bilinmiyor'}
+                                </td>
+                                <td>
+                                    {itiraz.arac_goruntu ? (
+                                        <img
+                                            src={`data:image/jpeg;base64,${itiraz.arac_goruntu}`}
+                                            alt={`Araç ${itiraz.arac_id}`}
+                                            className="img-thumbnail"
+                                            style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                        />
+                                    ) : 'Yok'}
+                                </td>
+                                <td>
+                                    <button
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={() => {
+                                            const videoUrl = `http://localhost:5000/api/videos/${itiraz.video_name}?start=${itiraz.arac_giris_zamani}&end=${itiraz.arac_cikis_zamani}`;
+                                            window.open(videoUrl, '_blank');
+                                        }}
+                                    >
+                                        İzle
+                                    </button>
+                                </td>
+                                <td>
+                                    {itirazDurumu === 'onaylandi' ? 'Onaylandı' :
+                                        itirazDurumu === 'reddedildi' ? 'Reddedildi' :
+                                            'Beklemede'}
+                                </td>
+                                <td>
+                                    <button
+                                        className="btn btn-sm btn-success me-2"
+                                        onClick={() => handleItirazDurumu(
+                                            itiraz.username,
+                                            itiraz.arac_id,
+                                            itiraz.video_name,
+                                            'onaylandi'
+                                        )}
+                                        disabled={isProcessed}
+                                    >
+                                        Onayla
+                                    </button>
+                                    <button
+                                        className="btn btn-sm btn-danger"
+                                        onClick={() => handleItirazDurumu(
+                                            itiraz.username,
+                                            itiraz.arac_id,
+                                            itiraz.video_name,
+                                            'reddedildi'
+                                        )}
+                                        disabled={isProcessed}
+                                    >
+                                        Reddet
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
                     </tbody>
                 </table>
             </div>

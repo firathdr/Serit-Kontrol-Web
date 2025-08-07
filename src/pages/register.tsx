@@ -16,8 +16,8 @@ const Register: React.FC = () => {
                 username,
                 password,
             });
-            alert("Üye işlemi Başarılı"); // Başarı mesajını göster
-            navigate("/login"); // Başarıyla kayıt olunca login sayfasına yönlendir
+            alert("Üye işlemi Başarılı");
+            navigate("/login");
         } catch (err: any) {
             setError("Kayıt işlemi başarısız. Lütfen tekrar deneyin.");
         }
