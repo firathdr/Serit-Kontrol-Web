@@ -163,23 +163,5 @@ npm run preview
 4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
 5. Pull Request oluşturun
 
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
-
-## 📞 İletişim
-
-- **Geliştirici**: [Adınız]
-- **Email**: [email@example.com]
-- **Proje Linki**: [https://github.com/username/serit_kontrol_web]
-
-## 🙏 Teşekkürler
-
-- React ve TypeScript topluluğu
-- Bootstrap ekibi
-- YOLO modeli geliştiricileri
-- Tüm katkıda bulunanlara
-
----
 
 **Not**: Bu uygulama backend API'si ile birlikte çalışır. Backend kurulumu için ayrı repository'yi inceleyin.
